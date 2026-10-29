@@ -35,7 +35,7 @@ import tools.jackson.databind.json.JsonMapper;
  * {@code java -jar app.jar --eval [options]} runs the test set and writes a report, then exits.
  * <pre>
  *   --eval.testset=eval/testset.yaml     test set file
- *   --eval.configs=hybrid:6,vector:6     retrieval configurations to compare (mode:topK)
+ *   --eval.configs=hybrid:6,vector:6     retrieval configurations to compare (mode:topK); default: app config
  *   --eval.retrieval-only                skip answer generation and judging (no Claude cost)
  *   --eval.ids=A01,B03                   only these items        --eval.limit=10   first N items
  *   --eval.concurrency=4                 parallel questions      --eval.out=eval/reports
@@ -62,6 +62,7 @@ public class EvalRunner implements ApplicationRunner {
     private final ApplicationContext context;
     private final String model;
     private final String setup;
+    private final String defaultConfig;
     private final JsonMapper json = JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).build();
 
     public EvalRunner(RagService rag, JudgeService judge, ApplicationContext context, RagProperties props,
@@ -70,6 +71,7 @@ public class EvalRunner implements ApplicationRunner {
         this.judge = judge;
         this.context = context;
         this.model = props.llm().model();
+        this.defaultConfig = props.retrieval().mode() + ":" + props.retrieval().topK();
         this.setup = "embeddings `%s` (%s), chunk table `%s`, RRF k=%d, keyword weight %.2f".formatted(
                 space.modelName(), space.provider(), space.table(), props.retrieval().rrfK(),
                 props.retrieval().keywordWeight());
@@ -107,7 +109,7 @@ public class EvalRunner implements ApplicationRunner {
         int concurrency = Integer.parseInt(option(args, "eval.concurrency", "4"));
         double inPrice = Double.parseDouble(option(args, "eval.input-price", "4"));
         double outPrice = Double.parseDouble(option(args, "eval.output-price", "20"));
-        List<Config> configs = Arrays.stream(option(args, "eval.configs", "hybrid:6").split(","))
+        List<Config> configs = Arrays.stream(option(args, "eval.configs", defaultConfig).split(","))
                 .map(Config::parse).toList();
 
         Path outDir = Path.of(option(args, "eval.out", "eval/reports"),

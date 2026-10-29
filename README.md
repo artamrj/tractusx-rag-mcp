@@ -144,17 +144,41 @@ java -jar target/rag-tractusx.jar --eval --eval.configs=hybrid:8
 Reports go to `eval/reports/<timestamp>/` (Markdown summary + JSON per configuration). A free retrieval benchmark
 also runs as the manually triggered GitHub Actions workflow *Retrieval eval*.
 
-Baseline with the **local MiniLM embedding model** (retrieval only, test set not yet human-reviewed):
+### Results (2026-10-29, test set not yet human-reviewed)
+
+Full run, default configuration (hybrid search, k=8, `text-embedding-3-small`, answers and judge by `claude-opus-5-5`):
+
+| Metric | Result |
+|---|---|
+| Retrieval: correct page among the 8 excerpts (Hit@8) | **100%** (Hit@1 74%, Hit@3 93%, MRR 0.84) |
+| Retrieval: share of expected pages found (Recall@8) | 87% |
+| Answer correctness (key points covered) | **80%** (61% of answers cover every key point) |
+| Faithfulness (claims supported by the excerpts) | **98%** |
+| Citation precision | 99% |
+| Abstains when the docs don't cover the question | 6 of 6 |
+| False abstentions on answerable questions | 6% (3 of 54) |
+| Latency p50 / p95 | 10.2 s / 15.3 s |
+| Cost of the whole run (60 answers + 60 judge calls) | $4.83 |
+
+By category, correctness is 84% for factual, 81% for cross-KIT and 70% for procedural questions; all four
+answerable German questions were answered (3 fully correct). The misses are mostly *incomplete* answers rather than
+wrong ones: for how-to questions the steps are spread over several sections, and the model says what the excerpts
+do not cover instead of guessing.
+
+Retrieval-only comparison with OpenAI embeddings (free to run, no Claude calls):
 
 | Config | Hit@1 | Hit@3 | Hit@k | Recall@k | MRR |
 |---|---|---|---|---|---|
-| vector-k6 | 61% | 76% | 85% | 72% | 0.70 |
-| hybrid-k6 | 57% | 80% | 83% | 69% | 0.69 |
-| vector-k10 | 61% | 76% | 93% | 78% | 0.71 |
-| hybrid-k10 | 57% | 80% | 93% | 79% | 0.70 |
+| vector-k6 | 80% | 93% | 96% | 82% | 0.87 |
+| hybrid-k6 | 74% | 93% | 98% | 84% | 0.84 |
+| vector-k8 | 80% | 93% | 96% | 84% | 0.87 |
+| **hybrid-k8 (default)** | 74% | 93% | **100%** | **87%** | 0.84 |
+| vector-k10 | 80% | 93% | 98% | 86% | 0.87 |
+| hybrid-k10 | 74% | 93% | 100% | 89% | 0.84 |
 
-With this small model, hybrid search only helps Hit@3; the OpenAI-embedding and full answer-quality numbers will be
-added after the test set review.
+Vector search ranks the best page first more often, but hybrid search gets at least one relevant page into the
+context for every question, which matters more because the model reads all k excerpts. With the small local
+MiniLM model all numbers are about 20 points lower (see `eval/reports/`).
 
 ## Development
 
