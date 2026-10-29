@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="466" viewBox="0 0 920 466" role="img" aria-label="Evaluation results: Hit@8 100%, Recall@8 87%, faithfulness 98%, citation precision 99%, correctness 80%, abstention 6 of 6">
+<title>Evaluation results: Hit@8 100%, Recall@8 87%, faithfulness 98%, citation precision 99%, correctness 80%, abstention 6 of 6</title>
+<rect x="0.5" y="0.5" width="919" height="465" rx="10" fill="#0d1117" stroke="#30363d"/>
+<text x="28" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" xml:space="preserve"><tspan fill="#e6edf3" font-weight="600">Evaluation on 60 questions</tspan></text>
+<text x="28" y="66" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" xml:space="preserve"><tspan fill="#9198a1">hybrid search · top-k 8 · text-embedding-3-small · answers and judge: claude-opus-5-5</tspan></text>
+<text x="28" y="112" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" xml:space="preserve"><tspan fill="#6e7681" font-weight="600">RETRIEVAL</tspan></text>
+<text x="28" y="220" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" xml:space="preserve"><tspan fill="#6e7681" font-weight="600">ANSWERS</tspan></text>
+<line x1="330.0" y1="98" x2="330.0" y2="382" stroke="#30363d" stroke-width="1"/>
+<text x="330.0" y="398" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#6e7681">0%</text>
+<line x1="550.0" y1="98" x2="550.0" y2="382" stroke="#30363d" stroke-width="1"/>
+<text x="550.0" y="398" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#6e7681">50%</text>
+<line x1="770.0" y1="98" x2="770.0" y2="382" stroke="#30363d" stroke-width="1"/>
+<text x="770.0" y="398" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" fill="#6e7681">100%</text>
+<text x="316" y="141.5" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#e6edf3">Correct page in context (Hit@8)</text>
+<path d="M330 126 h436.0 a4 4 0 0 1 4 4 v14 a4 4 0 0 1 -4 4 h-436.0 z" fill="#3987e5"/>
+<text x="778.0" y="141.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e6edf3">100%  (54 / 54)</text>
+<text x="316" y="181.5" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#e6edf3">Expected pages found (Recall@8)</text>
+<path d="M330 166 h378.8 a4 4 0 0 1 4 4 v14 a4 4 0 0 1 -4 4 h-378.8 z" fill="#3987e5"/>
+<text x="720.8" y="181.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e6edf3">87%</text>
+<text x="316" y="249.5" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#e6edf3">Faithfulness (claims backed by docs)</text>
+<path d="M330 234 h427.2 a4 4 0 0 1 4 4 v14 a4 4 0 0 1 -4 4 h-427.2 z" fill="#3987e5"/>
+<text x="769.2" y="249.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e6edf3">98%</text>
+<text x="316" y="289.5" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#e6edf3">Citation precision</text>
+<path d="M330 274 h431.6 a4 4 0 0 1 4 4 v14 a4 4 0 0 1 -4 4 h-431.6 z" fill="#3987e5"/>
+<text x="773.6" y="289.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e6edf3">99%</text>
+<text x="316" y="329.5" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#e6edf3">Correctness (key points covered)</text>
+<path d="M330 314 h348.0 a4 4 0 0 1 4 4 v14 a4 4 0 0 1 -4 4 h-348.0 z" fill="#3987e5"/>
+<text x="690.0" y="329.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e6edf3">80%</text>
+<text x="316" y="369.5" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" fill="#e6edf3">Abstains when docs lack the answer</text>
+<path d="M330 354 h436.0 a4 4 0 0 1 4 4 v14 a4 4 0 0 1 -4 4 h-436.0 z" fill="#3987e5"/>
+<text x="778.0" y="369.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#e6edf3">100%  (6 / 6)</text>
+<text x="28" y="440" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" xml:space="preserve"><tspan fill="#9198a1">p50 10.2 s · p95 15.3 s per answer  ·  $4.83 per full run (60 answers + 60 judge calls)  ·  test set pending human review</tspan></text>
+</svg>

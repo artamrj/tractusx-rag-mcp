@@ -1,212 +1,130 @@
-# RAG assistant for the Eclipse Tractus-X documentation
+<div align="center">
 
-Question answering over the [Eclipse Tractus-X](https://eclipse-tractusx.github.io) docs (KITs, developer docs,
-release guidelines) with Retrieval-Augmented Generation. Answers come from Claude, cite numbered sources and link to
-the exact page section. The same index is exposed as an **MCP server**, so AI agents such as Claude Code can use the
-docs as a tool.
+# Tractus-X Docs Assistant
 
-- **Stack:** Java 21, Spring Boot 4.1, LangChain4j 1.23, PostgreSQL 17 + pgvector (HNSW), Claude (`claude-opus-5-5`),
-  OpenAI `text-embedding-3-small` for embeddings
-- **Retrieval:** heading-aware chunking, hybrid search (vector + Postgres full-text) fused with weighted reciprocal rank fusion
-- **Ops:** Docker image, Helm chart (app, pgvector, ingestion Job/CronJob, ServiceMonitor, Grafana dashboard),
-  Prometheus metrics, GitHub Actions CI
-- **Quality:** 60-question test set with retrieval metrics (Hit@k, Recall@k, MRR) and an LLM judge
-  (correctness, faithfulness, citation precision, abstention)
+**Ask the Eclipse Tractus-X documentation anything, and get answers with sources.**<br/>
+A RAG service in Java with an MCP server, so AI agents can use the docs as a tool.
+
+[![CI](https://github.com/artamrj/rag-tractus-x/actions/workflows/ci.yml/badge.svg)](https://github.com/artamrj/rag-tractus-x/actions/workflows/ci.yml)
+![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?logo=springboot&logoColor=white)
+![LangChain4j](https://img.shields.io/badge/LangChain4j-1.23-1C3C3C)
+![pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?logo=postgresql&logoColor=white)
+![Claude](https://img.shields.io/badge/LLM-Claude_Opus_5.5-D97757?logo=anthropic&logoColor=white)
+![MCP](https://img.shields.io/badge/MCP-server-111111)
+![Helm](https://img.shields.io/badge/Kubernetes-Helm-0F1689?logo=helm&logoColor=white)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue)](LICENSE)
+
+<img src="docs/assets/demo-ask.svg" alt="Asking the API a question and getting a cited answer" width="860">
+
+</div>
+
+## Highlights
+
+- **Grounded answers** – Claude answers only from retrieved excerpts, cites `[n]`, and says so when the docs don't cover a question
+- **Hybrid retrieval** – pgvector (HNSW) + Postgres full-text search, fused with weighted reciprocal rank fusion
+- **Smart ingestion** – reads 330 pages from GitHub without cloning, re-embeds only changed files, deep-links to the exact section
+- **MCP server** – three read-only tools for Claude Code, opencode and other MCP clients
+- **Production setup** – Docker, Helm chart with ingestion Job/CronJob, Prometheus metrics, Grafana dashboard, CI
+- **Measured quality** – 60-question test set: **100%** Hit@8, **98%** faithfulness, **80%** correctness
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    subgraph app[Spring Boot app]
-        REST["REST /api/v1<br/>ask · ask/stream · search"] --> RAG[RagService]
-        MCP["MCP /mcp<br/>search · ask · list_kits"] --> RAG
-        RAG --> SEARCH[SearchService]
-        SEARCH --> VEC[Vector search<br/>pgvector HNSW]
-        SEARCH --> KW[Keyword search<br/>tsvector OR-query]
-        VEC & KW --> RRF[Weighted RRF]
-        RAG --> CLAUDE[(Claude)]
-        ING[IngestionService] --> CLEAN[MDX cleaner] --> CHUNK[Heading chunker] --> EMB[(OpenAI embeddings)]
+    subgraph clients [Clients]
+        U[REST client]
+        A[AI agent<br/>Claude Code · opencode]
     end
-    GH[(GitHub:<br/>eclipse-tractusx.github.io)] --> ING
-    EMB --> PG[(PostgreSQL + pgvector)]
-    VEC & KW --> PG
-    app -- /actuator/prometheus --> PROM[Prometheus] --> GRAF[Grafana]
+
+    subgraph app [Spring Boot 4 · LangChain4j]
+        API[REST API<br/>/api/v1]
+        MCP[MCP server<br/>/mcp]
+        RAG[RAG pipeline<br/>hybrid retrieval · citations]
+        ING[Ingestion<br/>clean · chunk · embed]
+    end
+
+    subgraph data [Data and models]
+        PG[(PostgreSQL<br/>+ pgvector)]
+        CL[[Claude]]
+        EMB[[OpenAI embeddings]]
+    end
+
+    GH[(Tractus-X docs<br/>on GitHub)]
+    OBS[Prometheus · Grafana]
+
+    U --> API --> RAG
+    A --> MCP --> RAG
+    RAG --> PG
+    RAG --> CL
+    GH --> ING
+    ING --> EMB
+    ING --> PG
+    app -. metrics .-> OBS
 ```
 
-**Ingestion** reads the website repository through the GitHub API (no 3 GB clone): one call lists the tree with blob
-SHAs, then only new or changed Markdown files are downloaded, cleaned (front matter, MDX imports, JSX, admonitions),
-split along headings with breadcrumbs (`Connector KIT › Adoption View › Policies`), embedded and stored. Unchanged
-files are skipped, deleted pages are removed, and a Postgres advisory lock keeps concurrent runs apart. It indexes the
-latest *released* KIT version (`docs-kits_versioned_docs/version-<latest>/`, which is what
-`eclipse-tractusx.github.io/docs-kits/...` serves) plus `docs/`, `community/` and `documentation/`: 330 pages,
-about 3,000 chunks. Source URLs follow Docusaurus routing rules and were checked against the live site.
+More diagrams (ingestion, request flow, data model) and design decisions: [docs/architecture.md](docs/architecture.md).
 
-**Answering** retrieves the top chunks, puts them into the prompt as numbered `<document>` blocks, and asks Claude to
-answer only from them, cite `[n]`, say so when the docs do not cover the question, and answer in the question's
-language (German or English). The response lists every source with a `cited` flag, token usage and latency.
-
-## Quick start (Docker Compose)
+## Quick start
 
 ```bash
-cp .env.example .env        # add ANTHROPIC_API_KEY and OPENAI_API_KEY
-docker compose up -d --build
-docker compose run --rm app --ingest
+cp .env.example .env                    # add ANTHROPIC_API_KEY and OPENAI_API_KEY
+docker compose up -d --build            # app, PostgreSQL, Prometheus, Grafana
+docker compose run --rm app --ingest    # index the docs (~3 min, ~$0.02)
 ```
 
 ```bash
-curl -s -XPOST localhost:8080/api/v1/ask -H 'Content-Type: application/json' \
+curl -s -X POST localhost:8080/api/v1/ask -H 'Content-Type: application/json' \
   -d '{"question":"How do I register a digital twin in the Digital Twin Registry?"}'
 ```
 
-Grafana runs on <http://localhost:3000> (admin/admin) with the dashboard preloaded, Prometheus on :9090. If the
-ports are taken, set `APP_PORT` / `GRAFANA_PORT`. Without an OpenAI key, `EMBEDDING_PROVIDER=local` uses a small
-in-process embedding model (fine for trying it out; lower retrieval quality).
-
-## API
-
-| Endpoint | Purpose |
+| Endpoint | |
 |---|---|
-| `POST /api/v1/ask` | `{question, kit?, topK?}` → `{answer, answered, outcome, sources[{n,title,url,kit,section,score,cited}], usage, latencyMs}` |
-| `POST /api/v1/ask/stream` | Server-sent events: `sources`, then `token` deltas, then `done` (full response) or `error` |
-| `GET /api/v1/search?q=&kit=&k=&mode=` | Retrieval only, no LLM call (`mode` = `vector` or `hybrid`) |
-| `GET /api/v1/kits` | Indexed KITs with page and chunk counts |
-| `POST /admin/ingest` | Incremental re-ingestion, requires `X-Admin-Token` |
-| `/actuator/health/{liveness,readiness}`, `/actuator/prometheus` | Probes and metrics |
+| `POST /api/v1/ask` | Answer with numbered sources, token usage and latency |
+| `POST /api/v1/ask/stream` | Same, streamed as server-sent events |
+| `GET /api/v1/search?q=` | Retrieval only, no LLM call |
+| `/mcp` | MCP server (Streamable HTTP) |
 
-If `RAG_API_KEY` is set, `/api/**` and `/mcp` require the header `X-Api-Key`. `outcome` is `answered` (cited the
-docs), `no_answer` (docs don't cover it), `refused` (model declined) or an HTTP error (429/503/504 for upstream
-problems, as problem+json).
-
-## MCP server
-
-The app serves the Model Context Protocol over Streamable HTTP at `/mcp` with three read-only tools:
-
-| Tool | What it does |
-|---|---|
-| `search_tractusx_docs(query, kit?, top_k?)` | Returns ranked excerpts with page URLs; costs no LLM tokens on the server |
-| `ask_tractusx_docs(question, kit?)` | Grounded answer with numbered source links |
-| `list_tractusx_kits()` | KIT ids usable as `kit` filter |
+## Use it from an AI agent
 
 ```bash
 claude mcp add --transport http tractusx-docs http://localhost:8080/mcp
-# with an API key:
-claude mcp add --transport http tractusx-docs http://localhost:8080/mcp --header "X-Api-Key: <key>"
 ```
 
-## Kubernetes (Helm)
+<img src="docs/assets/demo-mcp.svg" alt="An AI agent calling the MCP search tool" width="860">
 
-```bash
-docker build -t rag-tractusx:local .
-minikube -p rag-tractusx image load rag-tractusx:local
-helm install rag deploy/helm/rag-tractusx -n rag --create-namespace \
-  --set secrets.anthropicApiKey=$ANTHROPIC_API_KEY --set secrets.openaiApiKey=$OPENAI_API_KEY \
-  --set metrics.serviceMonitor.enabled=true --set metrics.grafanaDashboard.enabled=true
-```
+Tools: `search_tractusx_docs`, `ask_tractusx_docs`, `list_tractusx_kits`. Setup for other clients: [docs/mcp.md](docs/mcp.md).
 
-The chart deploys the app (startup/liveness/readiness probes, non-root, read-only root filesystem), a pgvector
-StatefulSet (or `externalDatabase.*`), an ingestion Job as post-install/upgrade hook plus a weekly CronJob, and
-optionally Ingress, HPA, a `ServiceMonitor` and the Grafana dashboard ConfigMap for kube-prometheus-stack. Secrets
-can come from `secrets.existingSecret`. See [values.yaml](deploy/helm/rag-tractusx/values.yaml). Verified on minikube
-with kube-prometheus-stack (target up, dashboard auto-imported).
+## Quality
 
-## Monitoring
+<img src="docs/assets/eval-results.svg" alt="Evaluation results" width="860">
 
-| Metric | Meaning |
+Method, metric definitions, the vector-vs-hybrid comparison and limitations: [docs/evaluation.md](docs/evaluation.md).
+
+## Observability
+
+<img src="docs/assets/grafana-dashboard.svg" alt="Grafana dashboard" width="860">
+
+Metrics, Helm deployment and configuration: [docs/deployment.md](docs/deployment.md).
+
+## Documentation
+
+| | |
 |---|---|
-| `rag_ask_duration_seconds{outcome,stream,channel}` | End-to-end answer time (histogram) by outcome |
-| `rag_retrieval_duration_seconds{mode}`, `rag_retrieval_top_score` | Retrieval latency and best-match similarity |
-| `rag_llm_tokens_total{model,type}`, `rag_llm_errors_total{type}` | Claude token usage and upstream errors |
-| `rag_index_chunks`, `rag_ingestion_last_success_timestamp_seconds`, `rag_ingestion_last_run_files{change}` | Index size and freshness, read from the database so they are correct even though ingestion runs in a Job pod |
-| `rag_mcp_tool_calls_total{tool,result}` | MCP usage |
-
-The Grafana dashboard ([deploy/grafana](deploy/grafana/dashboards/rag-tractusx.json), generated by
-`scripts/build_grafana_dashboard.py`) shows questions by outcome, p50/p95/p99 answer time, tokens and an estimated
-cost, retrieval latency and similarity, errors, MCP calls and ingestion freshness.
-
-## Evaluation
-
-[`eval/testset.yaml`](eval/testset.yaml) holds 60 questions drafted from the docs: 32 factual, 14 procedural,
-8 cross-KIT, 6 the docs cannot answer (to test abstention), 5 of them in German. Each answerable item lists the pages
-that contain the answer and 2–4 key points.
-
-```bash
-# retrieval only: no Claude calls
-java -jar target/rag-tractusx.jar --eval --eval.retrieval-only --eval.configs=vector:6,hybrid:6,hybrid:10
-# full run: answers + LLM judge (about $4-5 per configuration with claude-opus-5-5)
-java -jar target/rag-tractusx.jar --eval --eval.configs=hybrid:8
-```
-
-- **Retrieval** (deterministic): Hit@1/3/k, Recall@k and MRR at page level.
-- **Answers** (LLM judge with a fixed rubric; the judge only counts, scores are computed in code): correctness
-  (share of key points covered), faithfulness (share of claims supported by the retrieved excerpts), citation
-  precision, abstention on unanswerable questions and false abstentions on answerable ones, latency, cost.
-
-Reports go to `eval/reports/<timestamp>/` (Markdown summary + JSON per configuration). A free retrieval benchmark
-also runs as the manually triggered GitHub Actions workflow *Retrieval eval*.
-
-### Results (2026-10-29, test set not yet human-reviewed)
-
-Full run, default configuration (hybrid search, k=8, `text-embedding-3-small`, answers and judge by `claude-opus-5-5`):
-
-| Metric | Result |
-|---|---|
-| Retrieval: correct page among the 8 excerpts (Hit@8) | **100%** (Hit@1 74%, Hit@3 93%, MRR 0.84) |
-| Retrieval: share of expected pages found (Recall@8) | 87% |
-| Answer correctness (key points covered) | **80%** (61% of answers cover every key point) |
-| Faithfulness (claims supported by the excerpts) | **98%** |
-| Citation precision | 99% |
-| Abstains when the docs don't cover the question | 6 of 6 |
-| False abstentions on answerable questions | 6% (3 of 54) |
-| Latency p50 / p95 | 10.2 s / 15.3 s |
-| Cost of the whole run (60 answers + 60 judge calls) | $4.83 |
-
-By category, correctness is 84% for factual, 81% for cross-KIT and 70% for procedural questions; all four
-answerable German questions were answered (3 fully correct). The misses are mostly *incomplete* answers rather than
-wrong ones: for how-to questions the steps are spread over several sections, and the model says what the excerpts
-do not cover instead of guessing.
-
-Retrieval-only comparison with OpenAI embeddings (free to run, no Claude calls):
-
-| Config | Hit@1 | Hit@3 | Hit@k | Recall@k | MRR |
-|---|---|---|---|---|---|
-| vector-k6 | 80% | 93% | 96% | 82% | 0.87 |
-| hybrid-k6 | 74% | 93% | 98% | 84% | 0.84 |
-| vector-k8 | 80% | 93% | 96% | 84% | 0.87 |
-| **hybrid-k8 (default)** | 74% | 93% | **100%** | **87%** | 0.84 |
-| vector-k10 | 80% | 93% | 98% | 86% | 0.87 |
-| hybrid-k10 | 74% | 93% | 100% | 89% | 0.84 |
-
-Vector search ranks the best page first more often, but hybrid search gets at least one relevant page into the
-context for every question, which matters more because the model reads all k excerpts. With the small local
-MiniLM model all numbers are about 20 points lower (see `eval/reports/`).
+| [Architecture](docs/architecture.md) | Components, ingestion, request flow, data model, design decisions |
+| [Deployment](docs/deployment.md) | Docker Compose, Helm on Kubernetes, monitoring, configuration |
+| [Evaluation](docs/evaluation.md) | Test set, metrics, results, how to run |
+| [MCP server](docs/mcp.md) | Tools, client setup, troubleshooting |
 
 ## Development
 
 ```bash
-docker compose up -d postgres
-./mvnw verify                       # unit + Testcontainers integration tests, no API keys needed
-./mvnw test -Plive                  # calls Claude (needs ANTHROPIC_API_KEY)
-./mvnw test -Pmanual -Dtest=CorpusPreviewManualTest   # downloads the real docs, writes target/corpus-preview.md
+./mvnw verify                  # unit + Testcontainers tests, no API keys needed
+./mvnw test -Plive             # smoke test against the Claude API
 ```
 
-Configuration lives under `rag.*` in [application.yml](src/main/resources/application.yml); the most common settings
-are environment variables (`ANTHROPIC_MODEL`, `ANTHROPIC_EFFORT`, `EMBEDDING_PROVIDER`, `DOCS_REF`,
-`DOCS_KITS_VERSION`, `RETRIEVAL_MODE`, `RETRIEVAL_TOP_K`, `RETRIEVAL_KEYWORD_WEIGHT`, `RAG_API_KEY`, `ADMIN_TOKEN`).
+## License
 
-```
-src/main/java/de/ragtractusx/
-  ingest/     GitHub/local sources, MDX cleaner, heading chunker, Docusaurus URL mapper, incremental ingestion
-  retrieval/  vector + keyword retrievers, weighted RRF, search service
-  rag/        prompt builder, RAG pipeline (blocking + streaming)
-  api/        REST controllers, API-key filter, error mapping
-  mcp/        MCP tools
-  metrics/    Micrometer meters, token listener, database-backed gauges
-  eval/       test-set loader, retrieval scores, LLM judge, runner and report
-deploy/       Helm chart, Grafana dashboard, Prometheus config
-eval/         test set and reports
-```
-
-## License and attribution
-
-Code: Apache-2.0. The indexed documentation belongs to the Eclipse Tractus-X project and is licensed under
-CC-BY-4.0; every answer links back to the source pages.
+Code under [Apache-2.0](LICENSE). The indexed documentation belongs to the
+[Eclipse Tractus-X](https://eclipse-tractusx.github.io) project (CC-BY-4.0); every answer links back to its source pages.
+This is an independent project and is not affiliated with the Eclipse Foundation.
