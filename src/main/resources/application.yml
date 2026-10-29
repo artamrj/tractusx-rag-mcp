@@ -1,0 +1,86 @@
+spring:
+  application:
+    name: rag-tractusx
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ragtractusx}
+    username: ${DB_USER:rag}
+    password: ${DB_PASSWORD:rag}
+    hikari:
+      maximum-pool-size: 10
+  flyway:
+    enabled: true
+  mvc:
+    async:
+      request-timeout: 180s
+
+server:
+  port: 8080
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        rag.ask.duration: true
+        rag.retrieval.duration: true
+        http.server.requests: true
+
+logging:
+  structured:
+    format:
+      console: ${LOG_FORMAT:}
+  level:
+    de.ragtractusx: INFO
+
+rag:
+  llm:
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${ANTHROPIC_MODEL:claude-opus-5-5}
+    max-tokens: 16000
+    timeout: 120s
+    max-retries: 2
+    effort: ${ANTHROPIC_EFFORT:}
+    refusal-fallback: true
+  embedding:
+    provider: ${EMBEDDING_PROVIDER:openai}
+    openai-api-key: ${OPENAI_API_KEY:}
+    openai-model: text-embedding-3-small
+    batch-size: 100
+  source:
+    type: ${DOCS_SOURCE:github}
+    owner: eclipse-tractusx
+    repo: eclipse-tractusx.github.io
+    ref: ${DOCS_REF:main}
+    github-token: ${GITHUB_TOKEN:}
+    local-path: ${DOCS_LOCAL_PATH:}
+    include-prefixes:
+      - docs-kits/
+      - docs/
+      - community/
+      - documentation/
+    site-url: https://eclipse-tractusx.github.io
+  retrieval:
+    mode: ${RETRIEVAL_MODE:hybrid}
+    top-k: 6
+    candidates: 20
+    min-vector-score: 0.0
+    rrf-k: 60
+  security:
+    api-key: ${RAG_API_KEY:}
+    admin-token: ${ADMIN_TOKEN:}
