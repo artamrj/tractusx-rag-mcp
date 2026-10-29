@@ -1,0 +1,24 @@
+RAG Tractus-X assistant is deployed.
+
+1. Port-forward:
+   kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "rag.fullname" . }} 8080:{{ .Values.service.port }}
+
+2. Try it:
+   curl -s 'localhost:8080/api/v1/search?q=What+is+a+BPNL'
+   curl -s -XPOST localhost:8080/api/v1/ask -H 'Content-Type: application/json' -d '{"question":"How do I register a digital twin?"}'
+{{- if or .Values.secrets.ragApiKey .Values.secrets.existingSecret }}
+   (add -H 'X-Api-Key: <RAG_API_KEY>' if an API key is configured)
+{{- end }}
+
+3. MCP for AI agents:
+   claude mcp add --transport http tractusx-docs http://localhost:8080/mcp
+
+{{- if .Values.ingestion.onInstall }}
+
+The docs are being ingested by Job {{ include "rag.fullname" . }}-ingest:
+   kubectl -n {{ .Release.Namespace }} logs -f job/{{ include "rag.fullname" . }}-ingest
+{{- end }}
+{{- if and (eq .Values.config.embeddingProvider "openai") (not .Values.secrets.openaiApiKey) (not .Values.secrets.existingSecret) }}
+
+WARNING: embeddingProvider is "openai" but no OpenAI key is set; ingestion and search will fail.
+{{- end }}

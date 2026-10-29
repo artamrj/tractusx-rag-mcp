@@ -48,6 +48,7 @@ public class IngestionService {
     private final EmbeddingSpace space;
     private final DataSource dataSource;
     private final RagMetrics metrics;
+    private final IngestionRunRepository runs;
     private final int batchSize;
     private final MdxCleaner cleaner = new MdxCleaner();
     private final HeadingChunker chunker = new HeadingChunker();
@@ -55,7 +56,8 @@ public class IngestionService {
 
     public IngestionService(DocsSource source, EmbeddingModel embeddingModel, EmbeddingStore<TextSegment> store,
             IngestedFileRepository files, EmbeddingSpace space, DataSource dataSource, RagMetrics metrics,
-            RagProperties props) {
+            IngestionRunRepository runs, RagProperties props) {
+        this.runs = runs;
         this.source = source;
         this.embeddingModel = embeddingModel;
         this.store = store;
@@ -78,12 +80,15 @@ public class IngestionService {
             if (!tryLock(lockConnection)) {
                 throw new IngestionInProgressException();
             }
+            java.time.Instant startedAt = java.time.Instant.now();
             try {
                 IngestionReport report = run();
                 metrics.ingestionFinished(report, true);
+                runs.record(space.table(), startedAt, report, null);
                 return report;
             } catch (RuntimeException e) {
                 metrics.ingestionFinished(null, false);
+                runs.record(space.table(), startedAt, null, e.toString());
                 throw e;
             } finally {
                 unlock(lockConnection);

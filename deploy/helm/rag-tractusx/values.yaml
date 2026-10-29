@@ -1,0 +1,123 @@
+# -- Container image of the app (build with: docker build -t rag-tractusx:local .)
+image:
+  repository: rag-tractusx
+  tag: local
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+replicaCount: 1
+
+# -- Non-secret settings, passed as environment variables
+config:
+  anthropicModel: claude-opus-5-5
+  # -- Optional output effort (low|medium|high|xhigh|max); empty = model default
+  anthropicEffort: ""
+  # -- openai (production) or local (in-process model, no key needed, lower quality)
+  embeddingProvider: openai
+  # -- Branch, tag or commit of the Tractus-X website repo to index
+  docsRef: main
+  # -- Released KIT version to index, or "latest"
+  kitsVersion: latest
+  retrievalMode: hybrid
+  retrievalTopK: 8
+  retrievalKeywordWeight: 0.5
+  # -- ecs | logstash | gelf | "" (plain text)
+  logFormat: ecs
+  javaToolOptions: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+
+# -- Secrets. Either set values here (a Secret is created) or point existingSecret to a Secret with the same keys:
+# ANTHROPIC_API_KEY, OPENAI_API_KEY, RAG_API_KEY, ADMIN_TOKEN, GITHUB_TOKEN, DB_PASSWORD
+secrets:
+  existingSecret: ""
+  anthropicApiKey: ""
+  openaiApiKey: ""
+  # -- If set, /api/** and /mcp require header X-Api-Key
+  ragApiKey: ""
+  # -- If set, /admin/** is enabled and requires header X-Admin-Token
+  adminToken: ""
+  githubToken: ""
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: rag-tractusx.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 768Mi
+  limits:
+    memory: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# -- Ingestion of the docs: once after install/upgrade (Helm hook) and on a schedule
+ingestion:
+  onInstall: true
+  schedule:
+    enabled: true
+    cron: "0 3 * * 1"
+  backoffLimit: 3
+  resources:
+    requests:
+      cpu: 250m
+      memory: 768Mi
+    limits:
+      memory: 1Gi
+
+# -- Built-in PostgreSQL with pgvector (single instance). Disable and use externalDatabase in production.
+postgres:
+  enabled: true
+  image: pgvector/pgvector:0.8.7-pg17
+  database: ragtractusx
+  username: rag
+  password: rag-change-me
+  storage:
+    size: 5Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+
+externalDatabase:
+  # -- JDBC URL, e.g. jdbc:postgresql://db.example.com:5432/ragtractusx (the database needs the pgvector extension)
+  url: ""
+  username: rag
+  # -- Taken from DB_PASSWORD in the secret
+  password: ""
+
+metrics:
+  # -- Adds prometheus.io/* scrape annotations to the pods
+  podAnnotations: true
+  serviceMonitor:
+    # -- Requires the Prometheus Operator CRDs (e.g. kube-prometheus-stack)
+    enabled: false
+    interval: 30s
+    labels: {}
+  grafanaDashboard:
+    # -- ConfigMap picked up by the Grafana sidecar (kube-prometheus-stack)
+    enabled: false
+    labels:
+      grafana_dashboard: "1"

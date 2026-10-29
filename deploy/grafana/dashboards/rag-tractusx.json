@@ -1268,7 +1268,7 @@
     {
       "id": 16,
       "type": "timeseries",
-      "title": "Ingestion file changes (per run window)",
+      "title": "Files changed by the last ingestion run",
       "description": "",
       "datasource": {
         "type": "prometheus",
@@ -1286,7 +1286,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (change) (increase(rag_ingestion_files_total{application=\"rag-tractusx\"}[1h]))",
+          "expr": "max by (change) (rag_ingestion_last_run_files{application=\"rag-tractusx\"})",
           "legendFormat": "{{change}}",
           "refId": "A",
           "range": true

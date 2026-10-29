@@ -1,0 +1,7 @@
+apiVersion: v2
+name: rag-tractusx
+description: RAG question-answering assistant and MCP server for the Eclipse Tractus-X documentation
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [rag, llm, tractus-x, mcp, pgvector]

@@ -1,7 +1,6 @@
 package de.ragtractusx.metrics;
 
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.stereotype.Component;
 
@@ -28,13 +27,9 @@ public class RagMetrics {
     }
 
     private final MeterRegistry registry;
-    private final AtomicLong lastIngestionSuccess = new AtomicLong();
-    private final AtomicLong indexedChunks = new AtomicLong();
 
     public RagMetrics(MeterRegistry registry) {
         this.registry = registry;
-        registry.gauge("rag.ingestion.last.success.timestamp.seconds", lastIngestionSuccess);
-        registry.gauge("rag.index.chunks", indexedChunks);
     }
 
     public void askCompleted(Outcome outcome, boolean stream, String channel, Duration duration) {
@@ -88,19 +83,8 @@ public class RagMetrics {
                 .increment();
     }
 
+    /** Counts runs in this process; index size and freshness come from the database (see IndexGauges). */
     public void ingestionFinished(IngestionReport report, boolean success) {
         Counter.builder("rag.ingestion.runs").tag("result", success ? "success" : "error").register(registry).increment();
-        if (success && report != null) {
-            lastIngestionSuccess.set(System.currentTimeMillis() / 1000);
-            indexedChunks.set(report.totalChunks());
-            Counter.builder("rag.ingestion.files").tag("change", "added").register(registry).increment(report.added());
-            Counter.builder("rag.ingestion.files").tag("change", "updated").register(registry).increment(report.updated());
-            Counter.builder("rag.ingestion.files").tag("change", "deleted").register(registry).increment(report.deleted());
-            Counter.builder("rag.ingestion.files").tag("change", "failed").register(registry).increment(report.failed());
-        }
-    }
-
-    public void indexedChunks(long chunks) {
-        indexedChunks.set(chunks);
     }
 }

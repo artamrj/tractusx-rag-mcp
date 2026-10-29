@@ -1,0 +1,79 @@
+{{- define "rag.ingestPodSpec" -}}
+restartPolicy: OnFailure
+automountServiceAccountToken: false
+securityContext:
+  {{- include "rag.podSecurityContext" . | nindent 2 }}
+{{- with .Values.imagePullSecrets }}
+imagePullSecrets:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+initContainers:
+  {{- include "rag.waitForDb" . | nindent 2 }}
+containers:
+  - name: ingest
+    image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+    imagePullPolicy: {{ .Values.image.pullPolicy }}
+    args: ["--ingest"]
+    env:
+      {{- include "rag.env" . | nindent 6 }}
+    resources:
+      {{- toYaml .Values.ingestion.resources | nindent 6 }}
+    securityContext:
+      {{- include "rag.containerSecurityContext" . | nindent 6 }}
+    volumeMounts:
+      - name: tmp
+        mountPath: /tmp
+volumes:
+  - name: tmp
+    emptyDir: {}
+{{- end }}
+{{- if .Values.ingestion.onInstall }}
+---
+# Runs after install/upgrade. Incremental: unchanged pages are skipped, so upgrades are cheap.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "rag.fullname" . }}-ingest
+  labels:
+    {{- include "rag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingest
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.ingestion.backoffLimit }}
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: ingest
+    spec:
+      {{- include "rag.ingestPodSpec" . | nindent 6 }}
+{{- end }}
+{{- if .Values.ingestion.schedule.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "rag.fullname" . }}-ingest
+  labels:
+    {{- include "rag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingest
+spec:
+  schedule: {{ .Values.ingestion.schedule.cron | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.ingestion.backoffLimit }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/instance: {{ .Release.Name }}
+            app.kubernetes.io/component: ingest
+        spec:
+          {{- include "rag.ingestPodSpec" . | nindent 10 }}
+{{- end }}

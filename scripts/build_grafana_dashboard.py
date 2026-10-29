@@ -111,8 +111,8 @@ series("HTTP 5xx per minute",
 series("JVM heap used",
        [target(f'sum by (instance) (jvm_memory_used_bytes{{{APP},area="heap"}})', "{{instance}}")],
        0, 36, unit="bytes")
-series("Ingestion file changes (per run window)",
-       [target(f'sum by (change) (increase(rag_ingestion_files_total{{{APP}}}[1h]))', "{{change}}")],
+series("Files changed by the last ingestion run",
+       [target(f'max by (change) (rag_ingestion_last_run_files{{{APP}}})', "{{change}}")],
        12, 36, colors={"added": CAT[0], "updated": CAT[1], "deleted": CAT[2], "failed": CRITICAL})
 
 dashboard = {
@@ -128,6 +128,8 @@ dashboard = {
     "panels": panels,
     "annotations": {"list": []},
 }
-out = pathlib.Path(__file__).resolve().parent.parent / "deploy/grafana/dashboards/rag-tractusx.json"
-out.write_text(json.dumps(dashboard, indent=2) + "\n")
-print(f"wrote {out} ({len(panels)} panels)")
+root = pathlib.Path(__file__).resolve().parent.parent
+for out in (root / "deploy/grafana/dashboards/rag-tractusx.json",
+            root / "deploy/helm/rag-tractusx/files/rag-tractusx-dashboard.json"):
+    out.write_text(json.dumps(dashboard, indent=2) + "\n")
+    print(f"wrote {out} ({len(panels)} panels)")

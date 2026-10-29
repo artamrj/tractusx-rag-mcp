@@ -36,6 +36,8 @@ class IngestionServiceIT extends PostgresTestBase {
     JdbcClient jdbc;
     @Autowired
     EmbeddingSpace space;
+    @Autowired
+    IngestionRunRepository runs;
 
     @BeforeAll
     static void cleanDatabase(@Autowired JdbcClient jdbc, @Autowired EmbeddingSpace space) {
@@ -79,6 +81,8 @@ class IngestionServiceIT extends PostgresTestBase {
         assertThat(report.unchanged()).isEqualTo(3);
         assertThat(report.added() + report.updated() + report.deleted()).isZero();
         assertThat(report.chunksWritten()).isZero();
+        assertThat(runs.lastSuccess(space.table())).isPresent();
+        assertThat(runs.lastRun(space.table())).get().extracting(IngestionRunRepository.LastRun::added).isEqualTo(0);
     }
 
     @Test
