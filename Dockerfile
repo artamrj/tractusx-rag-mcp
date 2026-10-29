@@ -11,7 +11,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn -B -q -DskipTests package \
  && java -Djarmode=tools -jar target/rag-tractusx.jar extract --layers --launcher --destination target/extracted
 
 # ---- runtime ----
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:24-jre
 RUN groupadd --system --gid 10001 app && useradd --system --uid 10001 --gid app --no-create-home app
 WORKDIR /app
 # Spring Boot layers, least to most frequently changing, for better image layer caching.
