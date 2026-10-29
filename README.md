@@ -5,7 +5,7 @@
 **Ask the Eclipse Tractus-X documentation anything, and get answers with sources.**<br/>
 A RAG service in Java with an MCP server, so AI agents can use the docs as a tool.
 
-[![CI](https://github.com/artamrj/rag-tractus-x/actions/workflows/ci.yml/badge.svg)](https://github.com/artamrj/rag-tractus-x/actions/workflows/ci.yml)
+[![CI](https://github.com/artamrj/tractusx-rag-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/artamrj/tractusx-rag-mcp/actions/workflows/ci.yml)
 ![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?logo=springboot&logoColor=white)
 ![LangChain4j](https://img.shields.io/badge/LangChain4j-1.23-1C3C3C)
