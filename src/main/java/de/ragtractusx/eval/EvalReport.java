@@ -17,7 +17,7 @@ final class EvalReport {
     }
 
     static String markdown(List<EvalSummary> summaries, List<EvalItem> items, Path testset, String model,
-            boolean retrievalOnly, long unreviewed) {
+            String setup, boolean retrievalOnly, long unreviewed) {
         Map<String, Long> categories = items.stream()
                 .collect(Collectors.groupingBy(EvalItem::category, TreeMap::new, Collectors.counting()));
         long german = items.stream().filter(i -> "de".equals(i.lang())).count();
@@ -29,6 +29,7 @@ final class EvalReport {
         if (unreviewed > 0) {
             sb.append("- **").append(unreviewed).append(" items are not marked `reviewed: true` yet**\n");
         }
+        sb.append("- Retrieval: ").append(setup).append("\n");
         sb.append("- Answer model and judge: `").append(model).append("`")
                 .append(retrievalOnly ? " (not used: retrieval-only run)" : "").append("\n");
         sb.append("- Retrieval metrics on answerable items; a hit means a chunk from an expected page was retrieved\n\n");

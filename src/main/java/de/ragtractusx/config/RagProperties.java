@@ -60,8 +60,10 @@ public record RagProperties(Llm llm, Embedding embedding, Source source, Retriev
      * @param mode       "vector" or "hybrid" (vector + full-text, fused with reciprocal rank fusion)
      * @param topK       chunks passed to the LLM
      * @param candidates chunks fetched per retriever before fusion
+     * @param keywordWeight weight of the full-text ranking in the fusion (vector ranking has weight 1)
      */
-    public record Retrieval(String mode, int topK, int candidates, double minVectorScore, int rrfK) {
+    public record Retrieval(String mode, int topK, int candidates, double minVectorScore, int rrfK,
+            double keywordWeight) {
     }
 
     /**

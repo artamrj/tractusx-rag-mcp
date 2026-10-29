@@ -61,13 +61,18 @@ public class EvalRunner implements ApplicationRunner {
     private final JudgeService judge;
     private final ApplicationContext context;
     private final String model;
+    private final String setup;
     private final JsonMapper json = JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).build();
 
-    public EvalRunner(RagService rag, JudgeService judge, ApplicationContext context, RagProperties props) {
+    public EvalRunner(RagService rag, JudgeService judge, ApplicationContext context, RagProperties props,
+            de.ragtractusx.config.EmbeddingConfig.EmbeddingSpace space) {
         this.rag = rag;
         this.judge = judge;
         this.context = context;
         this.model = props.llm().model();
+        this.setup = "embeddings `%s` (%s), chunk table `%s`, RRF k=%d, keyword weight %.2f".formatted(
+                space.modelName(), space.provider(), space.table(), props.retrieval().rrfK(),
+                props.retrieval().keywordWeight());
     }
 
     @Override
@@ -121,7 +126,7 @@ public class EvalRunner implements ApplicationRunner {
                     java.util.Map.of("summary", summary, "results", results));
             log.info("{}: {}", config.name(), summary);
         }
-        String markdown = EvalReport.markdown(summaries, items, testset, model, retrievalOnly, unreviewed);
+        String markdown = EvalReport.markdown(summaries, items, testset, model, setup, retrievalOnly, unreviewed);
         Files.writeString(outDir.resolve("summary.md"), markdown);
         System.out.println(markdown);
     }

@@ -7,8 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Reciprocal Rank Fusion: score(d) = Σ 1 / (k + rank_i(d)). Rank-based, so the very different score scales of cosine
- * similarity and ts_rank do not need to be calibrated against each other.
+ * Weighted Reciprocal Rank Fusion: score(d) = Σ w_i / (k + rank_i(d)). Rank-based, so the very different score scales
+ * of cosine similarity and ts_rank do not need to be calibrated against each other. The keyword weight lets the
+ * (noisier) full-text ranking contribute less than the vector ranking.
  */
 public final class RrfFusion {
 
@@ -16,6 +17,11 @@ public final class RrfFusion {
     }
 
     public static List<RetrievedChunk> fuse(List<RetrievedChunk> vector, List<RetrievedChunk> keyword, int k, int topK) {
+        return fuse(vector, keyword, k, 1.0, topK);
+    }
+
+    public static List<RetrievedChunk> fuse(List<RetrievedChunk> vector, List<RetrievedChunk> keyword, int k,
+            double keywordWeight, int topK) {
         Map<String, Double> scores = new LinkedHashMap<>();
         Map<String, RetrievedChunk> chunks = new LinkedHashMap<>();
         Map<String, Double> vectorScores = new LinkedHashMap<>();
@@ -29,7 +35,7 @@ public final class RrfFusion {
         }
         for (int i = 0; i < keyword.size(); i++) {
             RetrievedChunk c = keyword.get(i);
-            scores.merge(c.id(), 1.0 / (k + i + 1), Double::sum);
+            scores.merge(c.id(), keywordWeight / (k + i + 1), Double::sum);
             chunks.putIfAbsent(c.id(), c);
             keywordRanks.put(c.id(), i + 1);
         }

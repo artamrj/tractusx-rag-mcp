@@ -78,10 +78,11 @@ rag:
     site-url: https://eclipse-tractusx.github.io
   retrieval:
     mode: ${RETRIEVAL_MODE:hybrid}
-    top-k: 6
+    top-k: ${RETRIEVAL_TOP_K:8}
     candidates: 20
     min-vector-score: 0.0
     rrf-k: 60
+    keyword-weight: ${RETRIEVAL_KEYWORD_WEIGHT:0.5}
   security:
     api-key: ${RAG_API_KEY:}
     admin-token: ${ADMIN_TOKEN:}

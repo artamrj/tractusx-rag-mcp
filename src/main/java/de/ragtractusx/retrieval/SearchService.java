@@ -48,7 +48,7 @@ public class SearchService {
             case HYBRID -> RrfFusion.fuse(
                     vector.search(request.query(), request.kit(), candidates, config.minVectorScore()),
                     keyword.search(request.query(), request.kit(), candidates),
-                    config.rrfK(), request.topK());
+                    config.rrfK(), config.keywordWeight(), request.topK());
         };
         double topScore = result.stream()
                 .map(RetrievedChunk::vectorScore)

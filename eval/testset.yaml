@@ -1,0 +1,900 @@
+# Evaluation test set: 60 questions over the Eclipse Tractus-X docs (KIT release 26.09 + developer/community docs).
+#
+# Drafted on 2026-10-29 from the real corpus (each answer was checked against the page text), then to be reviewed
+# by a human: set `reviewed: true` once an item is checked. The eval report prints how many are still unreviewed.
+#
+# Fields
+#   category          factual | procedural | cross-kit (needs 2+ pages) | unanswerable (docs do not cover it)
+#   expected_sources  repo paths of every page that contains the answer (KIT release folder is ignored when matching)
+#   key_points        atomic facts a correct answer must contain (graded by the LLM judge)
+#   evidence          short quote for the reviewer (not used by the eval)
+#   review_note       open question for the reviewer
+
+# ---- part A ----
+- id: A01
+  reviewed: false
+  question: "I want to grant access to a dataset if the consumer meets either one condition or another. Can I express that OR inside a single Catena-X policy, and how are multiple constraints combined?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/connector-kit/adoption-view/policies-in-catena.md"
+  reference_answer: "Within one policy, multiple constraints are chained with a logical AND, either by wrapping them in an odrl:and object or by listing them in the odrl:constraint property. Alternatives that should be evaluated as a logical OR are not modelled inside one policy; instead the provider publishes them as separate contract offers for the same dataset, and the consumer picks the offer whose terms it wants to negotiate."
+  key_points:
+    - "Multiple constraints in one policy are combined with logical AND"
+    - "AND-chaining is done via an odrl:and object or a list in the odrl:constraint property"
+    - "OR alternatives must be published as separate contract offers"
+  evidence: "Constraints that are supposed to be checked with a logical *OR* should be published as separate contract offers."
+
+- id: A02
+  reviewed: false
+  question: "In the Data Trust & Security setup, who is who? What does an attestation provider actually do, and does it take over responsibility for the data from the supplier?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/data-trust-and-security-kit/adoption-view.md"
+  reference_answer: "The KIT defines three roles: the data provider stores and provides the (verifiable or non-verifiable) data via the dataspace, the attestation provider is an additional independent entity that validates, verifies and certifies data, and the data consumer consumes the data and triggers the check whether it is verifiable. The attestation provider does not take over responsibility: the primary responsibility for the data remains with the data provider. Attestation providers need a verified identity and a verifiable role attestation awarded by a governance body so the chain of trust can be checked."
+  key_points:
+    - "Three roles: data provider, attestation provider, data consumer"
+    - "Attestation provider is an independent entity that validates/verifies and certifies data"
+    - "Primary responsibility for the data remains with the data provider"
+    - "Attestation providers need a verified identity and role attestation from a governance body (chain of trust)"
+  evidence: "However, the primary responsibility for the data must remain with the data provider"
+
+- id: A03
+  reviewed: false
+  review_note: "Also lists a PURIS page with a near-identical DTR asset example; drop it if sources should stay in the core KITs."
+  question: "How should I register my Digital Twin Registry as an asset in my EDC so partners can find it in my catalog and run lookups against it through the data plane?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/digital-twin-kit/software-development-view/software-development-view.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/puris-kit/software-development-view/software-development-view.md"
+  reference_answer: "Create an EDC asset whose properties set dct:type to https://w3id.org/catenax/taxonomy#DigitalTwinRegistry (cx-taxo:DigitalTwinRegistry) and cx-common:version to \"3.0\", the AAS version. Use an HttpData dataAddress whose baseUrl points to the DTR API but ends before the /shell-descriptors and /lookup segments, with proxyPath \"true\" and proxyQueryParams \"true\" (needed for the /lookup query parameters). Set proxyMethod to \"false\" so the data plane turns all incoming requests into GET and partners cannot change your registry. Consumers can then filter your catalog on dct:type DigitalTwinRegistry."
+  key_points:
+    - "dct:type = cx-taxo:DigitalTwinRegistry (https://w3id.org/catenax/taxonomy#DigitalTwinRegistry)"
+    - "cx-common:version = 3.0"
+    - "baseUrl must end before the /shell-descriptors and /lookup segments; proxyPath and proxyQueryParams true"
+    - "proxyMethod false so only GET requests reach the DTR"
+  evidence: "it's critical that the URL inserted here must end before the /shell-descriptors and /lookup segments."
+
+- id: A04
+  reviewed: false
+  review_note: "CCM page describes 3 trust levels but notes the current data model still uses 4; answer mentions both."
+  question: "For company certificates in CCM, what is the practical difference between the low, medium and high trust levels?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/company-certificate-management-kit/adoption-view/adoption-view.md"
+  reference_answer: "At the low (unverified) level, the provider shares a PDF certificate plus structured data in the Catena-X model, with no app needed and no verification performed. The medium level requires a Catena-X certified business application and at least one optional validation, such as OCR comparison of the PDF with the structured data or a cross-check against external databases or services (e.g. NQC, Ariba). The high (issuer-verified) level validates the certificate directly through an API or SSI interface to the issuing authority (e.g. TÜV, IATF, ENX), with OCR optional. The KIT notes that the current data model (26.03) still has four trust levels (none, low, high, trusted)."
+  key_points:
+    - "Low: PDF plus structured data shared via standard EDC flow, no verification"
+    - "Medium: certified business application plus optional validation such as OCR or third-party database cross-check"
+    - "High: validated directly via an API or SSI interface to the issuing authority"
+    - "The current data model (26.03) still uses four trust levels: none, low, high, trusted"
+  evidence: "An interface (API or SSI) to an issuing authority (e.g., Issuer: TÜV, IATF, ENX) is used to validate the certificate directly."
+
+- id: A05
+  reviewed: false
+  question: "When I create the digital twin of a serialized part for Industry Core, which specificAssetIds do I have to set, and which ones are optional?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/industry-core-kit/software-development-view/digital-twins.mdx"
+  reference_answer: "Every Industry Core twin needs manufacturerId (the manufacturer's BPNL), manufacturerPartId and digitalTwinType, which is \"PartInstance\" for serialized parts. Serialized parts also need partInstanceId (the serial number applied to the part) and intrinsicId, the unified technical lookup key, which here takes the partInstanceId value. customerPartId is optional but required if the manufacturer knows it, and van (pseudonymized VIN) is optional and only for vehicles."
+  key_points:
+    - "Mandatory for all twins: manufacturerId (BPNL), manufacturerPartId, digitalTwinType"
+    - "digitalTwinType is PartInstance for serialized parts"
+    - "Serialized parts additionally require partInstanceId and intrinsicId (= partInstanceId)"
+    - "customerPartId optional (should be added if known); van optional, vehicles only"
+  evidence: "Mandatory specific asset IDs ensure that at least this information is available for the digital twin."
+
+- id: A06
+  reviewed: false
+  question: "Wir lassen ein Bauteil bei einem Auftragsfertiger produzieren. In wessen Digital Twin Registry wird der digitale Zwilling angelegt, wem gehört er, und muss der Auftragsfertiger selbst bei Catena-X sein?"
+  lang: de
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/industry-core-kit/software-development-view/digital-twins.mdx"
+  reference_answer: "The contracting authority and the contract manufacturer must first agree on creating the twin. Whichever party creates it, the twin must be created in the contracting authority's DTR, so the contracting authority always owns the twin. The contract manufacturer need not be a Catena-X member. If it is not, it provides the data outside Catena-X, and the contracting authority creates the twin and looks up the child parts. All communication, such as quality notifications, goes through the contracting authority."
+  key_points:
+    - "The twin is always created in the contracting authority's DTR, regardless of who creates it"
+    - "The contracting authority is the owner of the twin"
+    - "The contract manufacturer does not need to be a Catena-X member"
+    - "Communication such as quality notifications goes through the contracting authority"
+  evidence: "Regardless of who of the two parties creates the digital twin, it must always be created in the contracting authority's DTR."
+
+- id: A07
+  reviewed: false
+  review_note: "Docs disagree on the IRS chart name, so the answer does not name it."
+  question: "I'd like to try the Item Relationship Service on my own machine. What do I need installed and what are the steps to get a local instance running?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/data-chain-kit/software-operation-view.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/data-chain-kit/documentation/admin-guide.md"
+  reference_answer: "Prerequisites are Docker with at least 8GB of memory, helm, a running Kubernetes cluster (e.g. Minikube) and kubectl. Add the IRS Helm repository (helm repo add irs https://eclipse-tractusx.github.io/item-relationship-service), then install the chart with your values file via helm install. Check the release with helm list and kubectl get pods; two pods should run, IRS and Minio. Then port-forward the IRS service to 8080 and use the Swagger UI at http://localhost:8080/api/swagger-ui/index.html, where the local setup uses mocked test data."
+  key_points:
+    - "Prerequisites: Docker (>= 8GB memory), helm, a Kubernetes cluster such as Minikube, kubectl"
+    - "Add the IRS Helm repo and install the chart with a values file via helm install"
+    - "Two pods should be running: IRS and Minio"
+    - "Port-forward to 8080 and use the Swagger UI to test"
+  evidence: "there should be two pods deployed - IRS and Minio"
+
+- id: A08
+  reviewed: false
+  question: "Our IRS jobs skip some suppliers' parts instead of fetching their data. How does IRS decide which contract offers it is willing to negotiate, and where do I configure that?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/data-chain-kit/documentation/admin-guide.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/data-chain-kit/documentation/arc42.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/data-chain-kit/adoption-view.md"
+  reference_answer: "IRS checks the policies of each offered contract against the accepted policies in its Policy Store and only negotiates offers that match. Non-matching offers are declined, no data is consumed, and a tombstone is created for that node. Policies are managed through the Policy Store REST API (/irs/policies, admin role). If no custom policies are registered, IRS falls back to the default configured in irs-edc-client.catalog.acceptedPolicies. The Policy Store is persisted in an S3-compatible store such as Minio."
+  key_points:
+    - "IRS validates contract offer policies against the Policy Store and only negotiates matching offers"
+    - "Non-matching offers are declined/no data consumed (tombstone for that node)"
+    - "Policies are managed via the Policy Store REST API (/irs/policies)"
+    - "Without custom policies, the default irs-edc-client.catalog.acceptedPolicies is used"
+  evidence: "IRS will only negotiate contracts for offers with policies found in Policy Store."
+
+- id: A09
+  reviewed: false
+  question: "As a traceability app provider, how do I publish my endpoint for receiving quality alerts through the connector so that partners' apps can find it and are allowed to use it?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/traceability-kit/software-development-view/app-provider.mdx"
+  reference_answer: "Register the notification endpoint as an EDC data asset with dct:type cx-taxo:ReceiveQualityAlertNotification and cx-common:version set to the Notification API version, so partners can filter for it. You may restrict visibility with an access policy (Membership or specific BPNs). The usage policy must include the FrameworkAgreement constraint (Data Exchange Governance) and the qualityNotifications usage purpose (e.g. cx.core.qualityNotifications:1); a ContractReference constraint is optional. Version 1.2.1 of the Notification API is mandatory, 2.0.0 optional, so multiple endpoint assets may be published in parallel."
+  key_points:
+    - "Create an EDC asset with dct:type ReceiveQualityAlertNotification and cx-common:version = API version"
+    - "Access policy can restrict visibility to Membership or specific BPNs"
+    - "Usage policy must contain FrameworkAgreement and the qualityNotifications UsagePurpose"
+    - "Notification API 1.2.1 is mandatory (2.0.0 optional)"
+  evidence: "The notification endpoint providers must set properties `dct:type` and `cx-common:version` which are used to classify the asset"
+
+- id: A10
+  reviewed: false
+  question: "Our supplier found a defect in batches it already delivered to us. Which type of traceability notification should it send, and how does that differ from the one we would send when we suspect a problem with supplied parts?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/traceability-kit/software-development-view/app-provider.mdx"
+    - "docs-kits_versioned_docs/version-26.09/kits/traceability-kit/adoption-view.mdx"
+  reference_answer: "The supplier should send a quality alert, a notification sent bottom-up from a supplier to its direct customers. It describes identified quality issues in delivered serialized parts or batches and lists the affected parts. When a customer suspects a problem, it sends a quality investigation top-down to its direct suppliers, asking them to investigate the affected parts and narrow down the cause. Both reference the affected parts by their Catena-X Unique IDs."
+  key_points:
+    - "Supplier-to-customer (bottom-up) notification is a quality alert"
+    - "Customer-to-supplier (top-down) notification is a quality investigation"
+    - "A quality alert describes identified issues and lists the affected serialized parts or batches"
+    - "Affected parts are referenced by Catena-X Unique IDs"
+  evidence: "**Quality investigations** refer to sending standardized notifications to direct suppliers (top-down) while **Quality Alerts** refer to sending notifications to direct customers (bottom-up)."
+
+- id: A11
+  reviewed: false
+  question: "What verifiable credentials do we need in our wallet to talk to the BPDM Gate and to the BPDM Pool over EDC?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/business-partner-kit/documentation-bpdm/bpdm-arc42.md"
+  reference_answer: "Both cases require a verifiable credential for the BPDM Framework Agreement in the wallet, which is verified during EDC communication. Uploading to and downloading from the Gate also requires validating the BPN credential, so only the sharing member can access its own Gate. Downloading from the Pool also requires validating the Membership credential, so only onboarded Catena-X members can access the Pool. The usage purposes starting with cx.bpdm.gate and cx.bpdm.pool are checked as well."
+  key_points:
+    - "Both Gate and Pool require a BPDM Framework Agreement credential"
+    - "Gate additionally checks the BPN credential so only the sharing member accesses its own Gate"
+    - "Pool additionally checks the Membership credential so only onboarded members access it"
+    - "Usage purposes cx.bpdm.gate / cx.bpdm.pool are checked"
+  evidence: "the Membership Credential needs to be validated to ensure that only onboarded catena-x members have access to the pool."
+
+- id: A12
+  reviewed: false
+  question: "As a buyer, how do I fetch a supplier's ISO 9001 certificate on demand using the CCM API? Walk me through the flow."
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/company-certificate-management-kit/development-view/architecture.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/company-certificate-management-kit/development-view/ccm-api-guide.md"
+  reference_answer: "This is the consumer-driven PULL mechanism. The provider publishes the certificate as an EDC asset (subject cx-taxo:CompanyCertificate, type cx-taxo:Submodel, semantic ID urn:samm:io.catenax.business_partner_certificate:3.1.0). The consumer can call POST /companycertificate/request with certifiedBpn, certificateType and optional locationBpns. The provider returns IN_PROGRESS (202), COMPLETED with a documentId (200), or REJECTED with errors, and the consumer polls the same endpoint because the provider never calls back. With the documentId (the EDC asset ID), the consumer finds the asset in the provider's catalog, negotiates a contract, gets an EDR, retrieves the certificate via the data plane, and can send feedback via /companycertificate/status (RECEIVED, ACCEPTED, REJECTED)."
+  key_points:
+    - "Consumer sends POST /companycertificate/request with certifiedBpn, certificateType (and optional locationBpns)"
+    - "Provider responds IN_PROGRESS, COMPLETED (with documentId) or REJECTED; the consumer polls, there is no callback"
+    - "documentId is the EDC asset ID used to find the asset in the catalog, negotiate and pull via the data plane"
+    - "Consumer can send feedback via /companycertificate/status"
+  evidence: "After `COMPLETED`, Consumer uses the `documentId` to search the Provider's EDC catalog and retrieves the certificate via the EDC data plane."
+
+- id: A13
+  reviewed: false
+  question: "We're onboarding to Industry Core. Which usage policy constraints should go on the offer for our Digital Twin Registry versus the offers for our aspect submodels, and which of these constraints is actually verified against the consumer's credentials?"
+  lang: en
+  category: cross-kit
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/industry-core-kit/software-development-view/policies.mdx"
+    - "docs-kits_versioned_docs/version-26.09/kits/digital-twin-kit/software-development-view/software-development-view.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/connector-kit/adoption-view/policies-in-catena.md"
+  reference_answer: "Offer the DTR with the usage purpose cx.core.digitalTwinRegistry:1 plus an active Membership constraint, and no use-case-specific FrameworkAgreement, because it serves all use cases and should appear once in the catalog. Offers for aspect submodels use the Industry Core purpose cx.core.industrycore:1. Since Industry Core has no Framework Agreement of its own, chain that purpose with the use case's FrameworkAgreement constraint. During negotiation, the FrameworkAgreement constraint is checked against the consumer's DataExchangeGovernanceCredential in its verifiable presentation. Usage purposes are not checked against VCs; only the consumer's consent to the policy is needed."
+  key_points:
+    - "DTR offer: purpose cx.core.digitalTwinRegistry:1 plus Membership, no use-case FrameworkAgreement"
+    - "Submodel/aspect offers: purpose cx.core.industrycore:1"
+    - "Industry Core has no own Framework Agreement; the purpose is chained with a use-case FrameworkAgreement constraint"
+    - "FrameworkAgreement is verified against the DataExchangeGovernanceCredential; usage purposes are not checked against VCs"
+  evidence: "it should be exposed only with the purpose `cx.core.digitalTwinRegistry:1`."
+
+- id: A14
+  reviewed: false
+  question: "I've self-issued a verifiable credential that wraps our PCF aspect for a product. How do I attach it to the product's digital twin so consumers recognise it as a credential and can fetch it through the connector?"
+  lang: en
+  category: cross-kit
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/data-trust-and-security-kit/software-development-view/digital-twins.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/digital-twin-kit/software-development-view/software-development-view.md"
+  reference_answer: "Register the credential as an extra submodel descriptor on the twin, store the credential payload in a submodel service, and create the connector asset, policies and contract definition for it. Mark it as a credential with a layered semanticId: Entity for the VC data model version, DataElement for the credential type (e.g. DataAttestationCredential), Submodel for the embedded aspect model (e.g. urn:samm:io.catenax.pcf:7.0.0#Pcf), and Operation for the signature type. The endpoint href points to the data plane with a /credential path, and subprotocol DSP, as in the Digital Twin KIT. Its subprotocolBody holds the connector asset id and the dspEndpoint of the control plane, used for catalog lookup and negotiation."
+  key_points:
+    - "Register the VC as a submodel descriptor in the DTR and back it with a connector asset, policies and contract"
+    - "semanticId keys: Entity (VC version), DataElement (VC type), Submodel (aspect model), Operation (signature type)"
+    - "href points to the data plane with a /credential path"
+    - "subprotocol DSP with subprotocolBody containing the asset id and the dspEndpoint (control plane URL)"
+  evidence: "the `semanticId` must specify from top to down the different metadata abstraction levels."
+
+# ---- part B ----
+- id: B01
+  reviewed: false
+  question: "As a supplier, a few variants in one of my capacity groups tie up the line far longer than the others, and I plan capacity in machine cycles while my customer sends demand in pieces. Can DCM cope with that, and how?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/demand-and-capacity-management-kit/adoption-view/use-case/load-factors.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/demand-and-capacity-management-kit/adoption-view/qna.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/demand-and-capacity-management-kit/adoption-view/glossary.md"
+  reference_answer: "Yes. DCM offers Load Factors, an optional feature that only the supplier applies inside the WeekBasedCapacityGroup: a numerical factor per linked material demand that scales the weekly demand to reflect variants that load the line more or less (e.g. 3.5 multiplies the demand by 3.5; a factor of 1 is neutral). Load Factors also act as conversion factors, converting the unit of measure of the WeekBasedMaterialDemand into the capacity group's unit, i.e. time (seconds) or cycles. If the supplier uses them, a Load Factor must be assigned to every WeekBasedMaterialDemand linked to that capacity group."
+  key_points:
+    - "Load Factors are an optional, supplier-defined feature applied within the WeekBasedCapacityGroup"
+    - "A Load Factor multiplies the weekly demand (1 is neutral; e.g. 3.5 multiplies demand by 3.5)"
+    - "Load Factors can convert the demand's unit of measure into time (seconds) or cycles"
+    - "If used, every WeekBasedMaterialDemand linked to the capacity group must get a Load Factor"
+  evidence: "A Load Factor of 1 is neutral and does not change the linked WeekBasedMaterialDemand."
+
+- id: B02
+  reviewed: false
+  question: "We ship the same part to several OEMs out of one shared production line and warehouse. What do we have to watch out for when sharing stock and planned output with each of these customers via PURIS?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/puris-kit/adoption-view/integration-scenarios/multi-customer-scenario.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/puris-kit/adoption-view/business-value.md"
+  reference_answer: "Even when production and stock are shared, the data must be allocated to each customer's context. The KIT suggests allocating planned production output and item stock based on customer orders/call-offs, short-term material demand (CX-0120) or scheduled deliveries (CX-0118), and for item stock using ratios or quotations based on call-offs so total inventory is not disclosed. Capacities or deliveries of other customers, total call-offs or deliveries across all customers, and total supplier stock or stock allocated to other customers must not be shared or made inferable. Each participant is responsible for legal compliance; the standard does not validate it."
+  key_points:
+    - "Data must be allocated/separated per customer even if production or stock is shared"
+    - "Allocation can be based on orders/call-offs, short-term material demand or scheduled deliveries; item stock via ratios or quotations from call-offs"
+    - "Other customers' capacities/deliveries, totals across all customers and total supplier stock must not be shared or inferable"
+    - "The data provider is responsible for legal compliance; the standard does not validate it"
+  evidence: "Accordingly, the following information must not be shared or made inferable:"
+
+- id: B03
+  reviewed: false
+  question: "I want to track where a shipment is via GPS and what is packed on a pallet through Catena-X. Which digital twins and aspect models does the logistics KIT give me for that?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/logistics-kit/adoption-view.md"
+  reference_answer: "The Logistics KIT defines a digital twin for a Transport Unit, which is needed when using a Global Transport Label or tracking a transport unit and providing data such as its packing list, and a digital twin for the Transport itself, e.g. to provide GPS data. Its aspect models are PackingList (the packed goods inside a transport unit), IotSensorData (tracked returnable packages and assets, monitoring the quality of critical materials) and GlobalTransportLabel (the GTL in digital form)."
+  key_points:
+    - "A 'Transport Unit' digital twin is used for a Global Transport Label or tracking a transport unit, e.g. with packing list data"
+    - "A 'Transport' digital twin can be used to track the transport, e.g. with GPS data"
+    - "Aspect models: PackingList, IotSensorData and GlobalTransportLabel"
+  evidence: "In case of tracking the transport and provide data e.g. about GPS data, using a digital twin for transport is possible."
+
+- id: B04
+  reviewed: false
+  question: "When a buyer's request for a machined part is passed to a supplier through a manufacturing-on-demand platform, what AAS submodels is that request expected to carry?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/manufacturing-as-a-service-kit/adoption-view.md"
+  reference_answer: "In the MaaS KIT the buyer's request is formalized as an initial Asset Administration Shell for the product that includes a Purchase Order submodel, enabling the supplier to analyze the production process and calculate price and delivery date automatically. The mandatory AAS submodels for the request are Purchase Order, Digital Nameplate, Technical Data and Handover Documentation; the same set is used for the offer and the order."
+  key_points:
+    - "The request is formalized as an initial AAS for the product including a Purchase Order submodel"
+    - "Mandatory submodels: Purchase Order, Digital Nameplate, Technical Data, Handover Documentation"
+    - "The same submodels are used for offer and order"
+  evidence: "First, the request is now formalized in an initial Asset Administration Shell (AAS) for the product, including a 'Purchase Order' submodel."
+
+- id: B05
+  reviewed: false
+  question: "Welche Kommunikationsmodi kann ein Kunde wählen, wenn er über den Shop-Floor-Information-Service eine Produktionsprognose anfragt, und wie beendet er laufende Updates wieder?"
+  lang: de
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/modular-production-kit/adoption-view.md"
+  reference_answer: "The customer selects the communicationMode in the GetProductionForecastData request: synchronous (Modular Production immediately sends the requested information back), cyclic (the forecast is sent periodically, e.g. every day) or notification (the customer is informed when the production forecast changes). The answers are sent as ProvideProductionForecastData, linked to the request via its messageId. For the cyclic and notification modes the customer must unsubscribe once no further forecasts are needed; the unsubscribe call is a simple HTTP DELETE without its own data model."
+  key_points:
+    - "Three communication modes: synchronous, cyclic and notification"
+    - "Synchronous = immediate reply; cyclic = periodic (e.g. daily); notification = when the forecast changes"
+    - "Forecasts are returned via ProvideProductionForecastData"
+    - "For cyclic/notification mode the customer unsubscribes with a plain HTTP DELETE"
+  evidence: "The cyclic mode sends the information periodically (e.g. every day), whereas the notification mode informs if the forecast for the production has changed."
+
+- id: B06
+  reviewed: false
+  question: "For tracing recycled material from end-of-life vehicles back into production, which semantic models does the material accounting KIT define, and on which existing Industry Core models do they build?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/material-accounting-kit/adoption-view/adoption-view.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/material-accounting-kit/development-view/development-view.md"
+  reference_answer: "Material Accounting defines six aspect models: VehicleInformation (the vehicle at end-of-life), Composition (how components and materials are grouped, e.g. material weight in a part), Material (material classification and characteristics), RecyclingInformation (primary/secondary and pre-/post-consumer material shares and origin), WasteCode (waste classification based on the European Waste Code) and RecyclingBatch (process and batch-level data such as transport, weighing and treatment steps). They extend the Industry Core models PartInstance (SerialPart) and SingleLevelBomAsBuilt, which identify physical assets and link vehicles, components and materials. The models are specified in the Material Accounting standard CX-0159."
+  key_points:
+    - "Six aspect models: VehicleInformation, Composition, Material, RecyclingInformation, WasteCode, RecyclingBatch"
+    - "They build on the Industry Core models PartInstance (SerialPart) and SingleLevelBomAsBuilt"
+    - "RecyclingBatch captures process/transaction data such as transport, weighing and treatment"
+    - "The standard is CX-0159 Material Accounting"
+  evidence: "At the center of the architecture, the PartInstance (SerialPart) and SingleLevelBomAsBuilt models from the Industry Core establish the structural foundation"
+
+- id: B07
+  reviewed: false
+  question: "When sharing a 3D CAD assembly with a partner, should the hierarchy of sub-geometries go into the scene node aspect or into the single-level BOM? What is the difference between the two?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/geometry-kit/adoption-view.md"
+  reference_answer: "SingleLevelSceneNode describes the spatial/geometric structure inside a single digital twin: its childItems may only reference other scene nodes of the same twin (i.e. provided by the same participant), and it carries geometry references, transformations and bounding volumes used for visualization, simulation or DMU. SingleLevelBOM describes the logical product structure across multiple digital twins, with child items pointing to the Catena-X IDs of other twins, possibly from other business partners. So the internal geometric hierarchy belongs in the scene node, while cross-twin/cross-partner assembly relations belong in the BOM; combined they represent both geometry and the multi-partner assembly hierarchy."
+  key_points:
+    - "SingleLevelSceneNode models the spatial/geometric structure within one digital twin; its childItems only reference scene nodes of the same twin"
+    - "Scene nodes carry geometry references, transformations and bounding volumes"
+    - "SingleLevelBOM connects multiple digital twins (possibly from different partners) into a logical product structure"
+    - "The two models are complementary"
+  evidence: "In short, SingleLevelSceneNode connects geometry within one digital twin, whereas SingleLevelBOM connects multiple digital twins with each other."
+
+- id: B08
+  reviewed: false
+  question: "In the online control and simulation use case, how is a shared simulation result structured, and to which partner is it sent?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/online-simulation-kit/adoption-view.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/online-simulation-kit/software-development-view.md"
+  reference_answer: "A MaterialFlowSimulationResult is sent by an OSim partner (a producing or a logistics company) to an OSim partner on a higher tier level, in line with the 1-up/1-down principle. It has four hierarchical entities: the MaterialFlowSimulationResult refers to one or more Shipments (source, destination and delivery time), each Shipment to one or more HandlingUnits (the smallest shipment unit, with an amount of identical units), and each HandlingUnit to one or more MaterialBatches (the material and its quantity). Overall it communicates delivery readiness: material identifier, amount, delivery time and destination."
+  key_points:
+    - "It is sent to an OSim partner on a higher tier level (1-up/1-down); senders can be producers or logistics companies"
+    - "Hierarchy: MaterialFlowSimulationResult -> Shipment -> HandlingUnit -> MaterialBatch"
+    - "Shipment holds source, destination and delivery time; HandlingUnit is the smallest shipment unit; MaterialBatch holds material and quantity"
+  evidence: "The MaterialFlowSimulationResult semantic model contains 4 hierarchical entities:"
+
+- id: B09
+  reviewed: false
+  question: "As a supplier, how do I make the preferential-origin data for my parts available so that my customer can fetch it themselves via digital twins instead of us sending paper declarations?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/customs-kit/adoption-view.md"
+  reference_answer: "This is the pull approach of the Customs KIT. After accepting the customer's request with a list of part numbers (sent by email/post or as a request notification), the supplier creates a customsInformation aspect model and saves it on its Submodel Server, creates a digital twin for each requested part (if not existing), adds the submodel descriptor and registers the twin in its Digital Twin Registry. It then creates a contract definition (asset plus policy) in its EDC; the customer negotiates a contract agreement via EDC and pulls the customsInformation JSON from the supplier's Submodel Server."
+  key_points:
+    - "Create the customsInformation aspect model and store it on the Submodel Server"
+    - "Create a digital twin per part, add the submodel descriptor and register it in the Digital Twin Registry"
+    - "Create an EDC contract definition consisting of asset and policy"
+    - "The customer negotiates a contract via EDC and then pulls the customsInformation data"
+  evidence: "The Data Provider (supplier) registers a new created digital twin to the decentral twin registry (DTR)."
+
+- id: B10
+  reviewed: false
+  question: "The supply disruption we reported to our customers is over. How do we properly close the notification we sent, and which fields must we leave untouched?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/supply-chain-disruption-notification-kit/software-development-view/demandAndCapacityNotification.md"
+  reference_answer: "Resolving is a special case of updating the previously sent notification: send an update in which status is set to resolved, resolvingMeasureDescription is filled in, and materialsAffected, affectedSitesSender and affectedSitesRecipient are empty. The fields sourceDisruptionId, notificationId, effect and leadingRootCause are immutable and copied from the previous notification. The recipient identifies the earlier version via the notification ID together with the sender."
+  key_points:
+    - "Resolving is done by sending an update of the existing notification"
+    - "Set status to resolved and fill in resolvingMeasureDescription"
+    - "materialsAffected, affectedSitesSender and affectedSitesRecipient should be empty"
+    - "sourceDisruptionId, notificationId, effect and leadingRootCause stay unchanged"
+  evidence: "Resolving a notification is a special case of an update."
+
+- id: B11
+  reviewed: false
+  question: "How does a supplier find out about a new requirement from an OEM over Catena-X, retrieve its content, and send its evaluation back?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/requirements-kit/software-development-view.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/requirements-kit/adoption-view.md"
+  reference_answer: "The customer creates the requirement in its requirements system, registers it as a digital twin in its DTR with a Requirements submodel, and sends a notification through the EDC to the supplier (using the Industry Core notification format with a Create/Update/Delete context). The supplier's system then requests the requirement through the EDC, and it is transferred into the supplier's DTR and submodel service. After evaluating it (status such as accept, decline or further clarification, plus an optional comment), the supplier updates the requirement and sends an update notification back via EDC. Notifications carry only technical information about creation/change/deletion; status and comments are stored in the requirement submodel."
+  key_points:
+    - "The customer registers the requirement as a digital twin with a Requirements submodel and notifies the supplier via EDC"
+    - "The supplier requests the requirement through the EDC"
+    - "The supplier updates the requirement (status/comment) and sends an update notification back via EDC"
+    - "Notifications contain only technical create/change/delete information; status and comments live in the submodel"
+  evidence: "Supplier sends a notification about the update through the EDC back to the Customer"
+
+- id: B12
+  reviewed: false
+  review_note: "Answer is spread over 5 pages; recall for this item will look low even when the answer is fine."
+  question: "One of our plants is hit by a strike and we can't yet tell how long output will be reduced. Should we just push updated numbers through DCM or PURIS, or send a disruption notification, and what is each of these meant for?"
+  lang: en
+  category: cross-kit
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/supply-chain-disruption-notification-kit/adoption-view.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/demand-and-capacity-management-kit/adoption-view/overview.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/demand-and-capacity-management-kit/adoption-view/use-case/disruption-notification.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/puris-kit/adoption-view/integration-scenarios/puris-and-dcm.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/puris-kit/adoption-view/adoption-view.md"
+  reference_answer: "Supply Chain Disruption Notifications are intended for exceptional events like this one, to quickly inform partners (1-up/1-down) about impactful events whose impact cannot be precisely quantified yet; whether an event is extraordinary is up to the sender. They are not meant for routine changes of demand or capacity, for which DCM and PURIS are recommended. DCM covers demand and capacity on a weekly basis beyond four weeks (a tactical horizon of 1-2 years), while PURIS covers the short-term supply situation from today up to about four weeks with daily granularity. The disruption notification is an optional capability referenced by the DCM standard CX-0128 and has its own aspect model and API (CX-0146)."
+  key_points:
+    - "Disruption notifications are for exceptional events whose impact cannot yet be precisely quantified, not for routine demand/capacity changes"
+    - "Routine changes should be handled with DCM and PURIS"
+    - "DCM: weekly buckets, horizon beyond 4 weeks (tactical 1-2 years); PURIS: daily, today to about 4 weeks"
+    - "Disruption notifications use their own aspect model and API (CX-0146), an optional capability referenced by CX-0128"
+  evidence: "Supply Chain Disruption Notifications are recommended for exceptional circumstances and are not intended for routine communication regarding changes in demands or capacities."
+
+- id: B13
+  reviewed: false
+  review_note: "Each page alone gives most of the answer, so only weakly cross-kit (both are sandbox KITs)."
+  question: "We are splitting a vehicle subsystem into engineering work packages and need outside partners for some of them. Which KIT handles the work breakdown and which one handles finding and contracting a provider, and how do they hand over to each other?"
+  lang: en
+  category: cross-kit
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/engineering-as-a-service-kit/adoption-view/adoption-view.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/modular-engineering-kit/adoption-view/adoption-view.md"
+  reference_answer: "The Modular Engineering (ME) KIT decomposes the system into modular objects and engineering tasks and defines what is to be done (tasks, interfaces, modular objects), orchestrating execution; Engineering as a Service (EaaS) is the brokerage and contracting layer that defines who performs it. When ME needs additional capacity or expertise it publishes the tasks to the EaaS marketplace, where capabilities are matched, quotations exchanged and contracts negotiated. EaaS then returns the selected provider and contract terms to ME for controlled task execution; EaaS itself does not handle the engineering execution."
+  key_points:
+    - "ME defines what is to be done (tasks, interfaces, modular objects) and orchestrates execution; EaaS defines who performs it"
+    - "ME publishes tasks to EaaS when additional capacity or expertise is needed"
+    - "EaaS handles matchmaking, quotation and contracting and returns the selected provider and contract terms to ME"
+    - "EaaS does not execute the engineering work itself"
+  evidence: "EaaS facilitates discovery, negotiation, and contracting - returning the selected provider and contract terms to ME for controlled task execution."
+
+# ---- part C ----
+- id: C01
+  reviewed: false
+  question: "My supplier hasn't put a PCF submodel on a material twin for the part we buy. How do I ask them for the carbon footprint over the connector, and how does their answer get back to me?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/product-carbon-footprint-exchange-kit/software-development-view.md"
+  reference_answer: "When no matching material twin or PCF submodel exists, the consumer discovers and negotiates access to the supplier's PCF Exchange API data asset (offered with cx-common:version 1.3.0 and dct:type cx-taxo:PcfExchange). It then calls GET /footprintExchange/{requestId}, passing the requestId plus manufacturerPartId and/or customerPartId (optionally dataModelVersion). The supplier later pushes the PCF back by negotiating with the consumer's connector and calling PUT /footprintExchange/{requestId} with the PCF in the body; later updates reuse the same PUT with update=true."
+  key_points:
+    - "Consumer discovers and negotiates the supplier's PCF Exchange API asset (dct:type cx-taxo:PcfExchange) via the catalog"
+    - "Request is GET /footprintExchange/{requestId} with requestId and at least one of manufacturerPartId or customerPartId"
+    - "Supplier responds asynchronously by pushing the PCF via PUT /footprintExchange/{requestId} to the consumer's endpoint"
+    - "Updates to a previously requested PCF use the same PUT with update=true"
+  evidence: "The consumer then requests the PCF with `GET /footprintExchange/{requestId}`. The `requestId` and at least one of `manufacturerPartId` or `customerPartId` are required."
+
+- id: C02
+  reviewed: false
+  question: "A user scans the QR code on a battery and gets an ID like CX:XYZ78901:IMR18650V1. What does a passport viewer app have to do, step by step, to pull the passport from the manufacturer?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/eco-pass-kit/software-development-view.md"
+  reference_answer: "The ID follows CX:<manufacturerPartId>:<partInstanceId>. The app first calls the Discovery Finder to get BPN Discovery and EDC Discovery endpoints, resolves the manufacturerPartId to the owner's BPN and the BPN to its EDC endpoints. It then filters those EDCs' catalogs for the data.core.digitalTwinRegistry asset type, negotiates access to the Digital Twin Registry and looks up the twin by the partInstanceId. Finally it negotiates the passport submodel asset referenced in the SUBMODEL-3.0 endpoint's subprotocolBody, obtains an EDR token and queries the href URL through the provider's data plane proxy."
+  key_points:
+    - "ID format is CX:<manufacturerPartId>:<partInstanceId>"
+    - "Discovery: manufacturerPartId resolved via BPN Discovery to a BPN, BPN resolved via EDC Discovery to connector endpoints"
+    - "Catalogs filtered for type data.core.digitalTwinRegistry; DTR negotiated and twin looked up by partInstanceId"
+    - "Submodel asset (from SUBMODEL-3.0 subprotocolBody) negotiated, EDR token obtained, data fetched from href via provider data plane proxy"
+  evidence: "At the beginning we start calling the `Discovery Service` which is responsible for giving us the urls from the `BPN Discovery` and the `EDC Discovery`"
+
+- id: C03
+  reviewed: false
+  question: "Our forwarder consolidates several of our dispatch notes onto one shipment. How do we end up with a transport emission value per dispatch note that we can feed into our PCF calculation?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/pcf-data-acquisition-kit/development-view/development-logistics.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/pcf-data-acquisition-kit/adoption-view/data-acquisition-logistics.md"
+  reference_answer: "Dispatch note and handling unit data (with weights) are uploaded to a logistics platform, which creates a Unique Consignment Reference (UCR) for the shipment. After delivery, the logistics service provider enters the emissions at UCR level, from primary data (fuel, distance, mode, load weight) or, if unavailable, via the Transport Carbon Calculator using GLEC emission factors. The platform then allocates the UCR-level footprint back to each dispatch note by weight distribution, and the customer queries the footprint per dispatch note from its PCF management system via an iLEAP-based API."
+  key_points:
+    - "DN/HU data are uploaded to the logistics platform and a UCR is created for the consolidated shipment"
+    - "The logistics service provider reports emissions only at UCR level (primary data, or Transport Carbon Calculator with GLEC factors)"
+    - "The platform allocates UCR emissions to individual dispatch notes based on weight distribution"
+    - "Customer queries the per-DN footprint via an iLEAP-based API from its PCF management system"
+  evidence: "The logistics platform automatically distributes the UCR-level footprint back to each individual DN covered by that UCR based on the weight distribution."
+
+- id: C04
+  reviewed: false
+  question: "After the CBAM reporting period closes, our EU import team needs actual verified emissions from a non-EU steel supplier. What exactly should the supplier's reply contain, and how is it sent?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/cbam-kit/adoption-view/adoption-view.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/cbam-kit/development-view/development-view.md"
+  reference_answer: "The supplier answers the importer's request with a CBAM response notification exchanged via Catena-X connectors. For each good and each operator/installation it must give the production method(s) with the net mass per method, the direct and indirect embedded emissions per method and installation, an attestation of conformance from an accredited third-party verifier with a link to the verification document, and any carbon price already paid in the country of production. If the supplier does not operate the installation, it obtains this data from the operator and passes it through."
+  key_points:
+    - "Production method(s) and net mass per method, per operator and installation"
+    - "Direct and indirect embedded emissions per production method and installation"
+    - "Attestation of conformance from an accredited third-party verifier, with a link to the verification document"
+    - "Carbon price already paid in the country of production"
+  evidence: "An attestation of conformance (`attestationOfConformance`) issued by an accredited third-party verifier, including a link to the verification document"
+
+- id: C05
+  reviewed: false
+  question: "As a small supplier going through the Catena-X Due Diligence Check, how is it decided whether I just fill in a self-assessment questionnaire or have to undergo an audit?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/due-diligence-check-kit/adoption-view/adoption-view.md"
+  reference_answer: "The Service and Solution Provider combines country and sector risk data from the shared risk register (provided by the Standard Setter) with the company's size into a risk classification, assigning one of three levels: R1 (low), R2 (medium) or R3 (high). Medium-risk companies (e.g. R2) must complete and sign a Self-Assessment Questionnaire, which the SSP evaluates and for which the SME defines preventive measures. High-risk companies (e.g. R3) may require an audit, after which the SME develops a corrective action plan with target dates; a verified incident can escalate a company, e.g. from R2 to R3."
+  key_points:
+    - "SSP creates a combined risk and company-size classification based on the shared country and sector risk register"
+    - "Three levels: R1 low, R2 medium, R3 high risk"
+    - "Medium risk (e.g. R2) requires a Self-Assessment Questionnaire"
+    - "High risk (e.g. R3) may require an audit with a corrective action plan incl. target dates"
+  evidence: "For companies classified as medium risk (e.g., R2), completion of a Self-Assessment Questionnaire (SAQ) is required."
+
+- id: C06
+  reviewed: false
+  question: "Wie trennt das Data Governance KIT das Vorbereiten von Assets, Policies und Vertragsangeboten von deren Ausrollen auf die EDC-Connectoren?"
+  lang: de
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/data-governance-kit/software-development-view.md"
+  reference_answer: "The Data Governance KIT acts as an abstraction layer over multiple EDC connectors using two concepts: staging (management) and publication. In staging, assets, policies and contract offers are created, updated and deleted locally within the Governance KIT and can be reviewed and approved by a manual or automatic workflow. Once they are ready, the publication process sends the reviewed/approved assets, policies and contract offers to the required connectors."
+  key_points:
+    - "Two concepts: staging (management) and publication"
+    - "Staging = creating/updating/deleting assets, policies and contract offers locally in the KIT before sending them to connectors"
+    - "Items can be reviewed and approved via a manual or automatic workflow"
+    - "Publication sends the approved items to the required (possibly multiple) EDC connectors"
+  evidence: "Once the users are sure that now the data is ready to be sent to Connectors, the Publication process kicks in."
+
+- id: C07
+  reviewed: false
+  question: "We are a chemical supplier and want to provide our safety data sheets to automotive customers via eSDScom in Catena-X. Which standards and setup are required on our side as data provider?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/esdscom-kit/development-view/development-view.md"
+  reference_answer: "All participants must fulfil CX-0002 (Digital Twins in Catena-X) and CX-0018 (dataspace connectivity), while CX-0162 eSDScom must be fulfilled only by data providers. The provider must run a CX-0002 compliant Digital Twin Registry so the eSDScom data can be offered as a submodel in an AAS shell descriptor. The submodel uses the semantic ID urn:samm:io.catenax.esdscom:1.0.0#eSDScom, and parties are identified by BPN (CX-0010) and onboarded per CX-0006."
+  key_points:
+    - "CX-0002 and CX-0018 are required for all participants"
+    - "CX-0162 eSDScom is mandatory only for data providers"
+    - "Provider needs a CX-0002 compliant Digital Twin Registry exposing eSDScom as a submodel in an AAS shell descriptor"
+    - "Semantic ID urn:samm:io.catenax.esdscom:1.0.0#eSDScom"
+  evidence: "To participate in the eSDScom use case, the following single standard MUST be fulfilled only by data providers:"
+
+- id: C08
+  reviewed: false
+  question: "We sit several tiers downstream from a company that is the target of a reported human-rights or environmental incident. What will we actually be told about it, compared with that company's direct customers?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/environmental-and-social-standards-kit/adoption-view.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/environmental-and-social-standards-kit/documentation.md"
+  reference_answer: "Access depends on the degree of relationship to the incident originator (L0). Direct partners (L1) get the incident status and full information. Indirect partners (Ln) only receive anonymized information (anonymized title and description, category, status, etc.) from the previous partner, together with their distance to L0; the originator's identity and the path from L0 to Ln are neither communicated nor documented. The Clearing Agency sees the status and original intake of all incidents."
+  key_points:
+    - "Direct (L1) partners receive the status and full incident information"
+    - "Indirect (Ln) partners receive only anonymized information (title/description, category, status) plus their distance to L0"
+    - "The originator's (L0) identity and the supply-chain path are not communicated or documented"
+  evidence: "They will receive from the previous business partner (L~n-1~) the anonymized incident information (anonymized title & description, category, status, etc.)"
+
+- id: C09
+  reviewed: false
+  review_note: "Secondary source only partly covers the answer."
+  question: "We're a component supplier who wants to offer our lifetime prognosis model as a calculation service in a Behaviour Twin use case. Which components do we need to run on our side?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/behaviour-twin-kit/adoption-view/architecture.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/behaviour-twin-kit/software-development-view/service-bindings.md"
+  reference_answer: "A calculation service provider needs an EDC connector with the knowledge agent components (agent plane / matchmaking agent) and the Catena-X ontologies, like every role. In addition it runs the calculation service itself and a remoting agent, the binding agent for service bindings that translates graph data into the service's input format and the result back into the graph. Usage data and a provisioning agent are needed by the data provider, not the service provider."
+  key_points:
+    - "EDC connector with agent plane / matchmaking agent"
+    - "Catena-X ontologies"
+    - "The calculation service itself"
+    - "A remoting agent (service binding agent) to bind the service to the knowledge graph"
+  evidence: "You always need access to your **running connector (EDC) with knowledge agent components** and the (extensible) **ontologies of Catena-X**."
+
+- id: C10
+  reviewed: false
+  question: "Isn't it risky to let partners run SPARQL-based skills against our backend with Knowledge Agents? What protects our data?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/knowledge-agents-kit/adoption-view/intro.md"
+  reference_answer: "Only business partners with signed contracts (in certain roles) get access; a skill request from a non-authorized chain of computation cannot enter the backend. The backend is not exposed directly but sits behind a virtualization layer that maps different contracts to different security principals and data views. SPARQL provides a well-defined set of operations that can be checked in advance rather than arbitrary Turing-complete computations, and the compute-to-data approach shares only computation results instead of the underlying data."
+  key_points:
+    - "Access only for contracted business partners; unauthorized skill requests cannot reach the backend"
+    - "A virtualization layer between agent and data source maps contracts to different security principals/data views"
+    - "SPARQL offers a well-defined set of operations that can be validated in advance (no arbitrary ad-hoc computation)"
+    - "Compute-to-data: only computation results are shared, not the full data"
+  evidence: "KA follows a strict compute to data approach. Thus, by design only computation results are shared instead of copying all data relevant for this computation"
+
+- id: C11
+  reviewed: false
+  question: "How is the recycled-material share of a single component calculated, and how does that roll up to a figure for the whole vehicle?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/circularity-kit/adoption-view.md"
+  reference_answer: "The secondary material content (SMC) is the ratio of secondary material used to total material used at component level, expressed as a percentage. It is the sum of pre-consumer material content, post-consumer material content and, optionally, reutilization content (rework, regrind or scrap reused within the same process, which is excluded from pre-consumer material). The SMC is calculated for every component, and the secondary material quota (SMQ) is the vehicle-level KPI calculated from the individual components' SMCs."
+  key_points:
+    - "SMC = ratio of secondary material used to total material used, at component level (percentage)"
+    - "SMC is the sum of pre-consumer, post-consumer and optional reutilization content"
+    - "SMQ is the vehicle-level KPI calculated from the components' SMCs"
+  evidence: "the secondary material content (SMC) is defined as the ratio between secondary material used and total material used on component level"
+
+- id: C12
+  reviewed: false
+  review_note: "Rests on a single FAQ line in the PCF KIT."
+  question: "We already calculate PCFs for our battery modules following the Catena-X rulebook. Does a battery passport actually have to include a carbon footprint, and which carbon footprint attributes are mandatory in the digital product passport?"
+  lang: en
+  category: cross-kit
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/product-carbon-footprint-exchange-kit/faq.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/eco-pass-kit/documentation/dpp-rulebook.md"
+  reference_answer: "Yes. The PCF Exchange KIT FAQ states that PCF data is a mandatory attribute for any Battery Passport. The DPP Rulebook makes the product carbon footprint's value, unit, type, lifecycle stage and facility identification mandatory, while its performance class is optional because the Battery Regulation has not yet defined the classes. These values are validated against the Catena-X TfS PCF Verification Framework and PCFs calculated in compliance with ISO 14067."
+  key_points:
+    - "PCF data is mandatory for any Battery Passport"
+    - "Mandatory DPP carbon footprint attributes: footprint value, unit, type, lifecycle and facility identification"
+    - "Performance class is optional (classes not yet defined by the Battery Regulation)"
+    - "Content validation follows the Catena-X TfS PCF Verification Framework and ISO 14067"
+  evidence: "Yes — PCF data is a mandatory attribute for any Battery Passport."
+
+- id: C13
+  reviewed: false
+  review_note: "Secondary source only partly covers the answer."
+  question: "For a remaining-useful-life prognosis, how do I publish the SPARQL skill on our agent plane, run it for a list of VINs, and control whether it executes on our side or at the partner's connector?"
+  lang: en
+  category: cross-kit
+  expected_sources:
+    - "docs-kits_versioned_docs/version-26.09/kits/behaviour-twin-kit/software-development-view/skill.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/knowledge-agents-kit/operation-view/agent-edc.md"
+    - "docs-kits_versioned_docs/version-26.09/kits/knowledge-agents-kit/software-development-view/api/agent/skill/post.mdx"
+    - "docs-kits_versioned_docs/version-26.09/kits/knowledge-agents-kit/software-development-view/api/agent/post.mdx"
+    - "docs-kits_versioned_docs/version-26.09/kits/knowledge-agents-kit/software-development-view/api/agent/get.mdx"
+  reference_answer: "A skill is registered by posting the parameterized SPARQL query (Content-Type application/sparql-query) to the agent plane's /api/agent/skill endpoint with the skill asset name, optionally with distributionMode, contract and isFederated. It is invoked via /api/agent?asset=<skill asset>, passing the VINs as bindings in an application/sparql-results+json body. The runMode parameter selects where it runs: provider executes it in the remote partner's environment (using a global asset id prefixed with the partner connector's URL), consumer downloads and runs it locally, and all (default) lets the agent choose based on contracts and policies."
+  key_points:
+    - "Register by POSTing the parameterized SPARQL query (application/sparql-query) to /api/agent/skill with the skill asset name"
+    - "Invoke via /api/agent?asset=... with the VINs as bindings in a sparql-results+json body"
+    - "runMode=provider runs the skill in the partner's connector; runMode=consumer downloads and runs it locally"
+    - "runMode=all (default) lets the agent choose the execution location based on contracts and policies"
+  evidence: "In this case, the consumer agent will negotiate with the provider agent to execute the skill in the provider connector."
+
+# ---- part D ----
+- id: D01
+  reviewed: false
+  question: "I'm containerizing a Java service that we will publish on DockerHub. Which base image am I supposed to use, and how specific should the tag in my FROM line be?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs/release/trg-4/trg-4-02.md"
+  reference_answer: "For Java/Kotlin/JVM-based images the aligned base image is Eclipse Temurin, preferring a JRE (and alpine) tag over a JDK, e.g. 21-jre-alpine. You must not reference a tag pointing to a patch version (e.g. alpine:3.18.5); use a tag with only the major or minor version so the image can be rebuilt with an updated base image without touching the Dockerfile. The base image should be used as-is, without running package-manager updates or installing extra packages, since that could pull in content with unclear IP/licensing."
+  key_points:
+    - "Java/JVM images use Eclipse Temurin as base image, preferring JRE (alpine) over JDK"
+    - "Do not use a patch-version tag; use a major or minor version tag"
+    - "Use the base image as-is: no package-manager upgrades or extra package installs"
+  evidence: "Do not use an image tag pointing to a patch version of the image. Instead, use an image tag containing either minor or major version."
+
+- id: D02
+  reviewed: false
+  question: "How should I set CPU and memory requests and limits in my product's Helm chart defaults?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs/release/trg-5/trg-5-04.md"
+  reference_answer: "The Helm chart must ship app-specific, sane default CPU and memory settings. For CPU, the limit should be about 2-3 times higher than the request; the request must not equal the limit, so the pod can use extra CPU when available. For memory, request and limit must be set equal, because memory is not a stretchable resource and Kubernetes kills pods that use more memory than expected."
+  key_points:
+    - "The chart must contain app-specific sane default CPU and memory settings"
+    - "CPU limit about 2-3 times the CPU request (request not equal to limit)"
+    - "Memory request and memory limit set equal"
+  evidence: "Verify that memory request and limit are set equal."
+
+- id: D03
+  reviewed: false
+  question: "Our repository hasn't had a product release in a long time. When can the committers deprecate it, and what does that actually mean for people still using our Helm charts and container images?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs/release/trg-7/trg-7-09.md"
+  reference_answer: "Committers can propose deprecation if a repository does not comply with the TRGs and/or Eclipse Foundation guidelines (security, IP, etc.), or, for product repositories, if the product was not released within the past year's major release cycle or the standards it uses changed in a major version in that cycle. Deprecation means the repository is archived (set to 'Public Archive' on GitHub); it stays accessible and can be reactivated. Helm charts and container images remain available and users are not informed about the deprecation. After the list is announced on the mailing list, project leads deprecate the repositories if no action is taken within 4 weeks."
+  key_points:
+    - "Deprecation means archiving the repository (Public Archive); it can be revived later"
+    - "Criteria: non-compliance with TRGs/EF guidelines, or no product release / major standard change within the past year's major release cycle"
+    - "Helm charts and container images remain available and users are not notified"
+    - "If no action is taken within 4 weeks after the announcement, project leads deprecate the repository"
+  evidence: "Additionally the helm charts and container images are still available and no information about the deprecation is passed to the user."
+
+- id: D04
+  reviewed: false
+  question: "What can I do on the Tractus-X GitHub repos once I'm an official project contributor that I can't do with just a signed ECA?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs/oss/contributor-committer.md"
+  reference_answer: "Anyone with an Eclipse account and signed ECA is a contributor with only the GitHub read role. Official project contributors get the triage role, which lets them apply/dismiss labels, close, reopen and assign issues and pull requests, apply milestones, mark duplicates, request pull request reviews, and access the security tab. Write access (pushing code) remains reserved to committers."
+  key_points:
+    - "Plain contributors (signed ECA) have read access only"
+    - "Official project contributors get the GitHub triage role"
+    - "Triage allows managing labels/milestones, closing/reopening/assigning issues and PRs, marking duplicates and requesting PR reviews"
+    - "Triage also grants access to the security tab"
+  evidence: "Close, reopen, and assign all issues and pull requests"
+
+- id: D05
+  reviewed: false
+  question: "My planned feature depends on another component and some things are still unclear. How do I get that discussed with the other teams before the release is planned?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs/oss/release-process.md"
+  reference_answer: "Unresolved questions and cross-component dependencies are handled at the Alignment Day, which precedes the Open Planning Day. Label the feature issue with 'open question' at least 3 days before the Alignment Day. The Alignment Day is not a planning or refinement session; it is a dedicated space to clarify uncertainties and dependencies, where feature owners describe their needs and component developers clarify what is expected from them."
+  key_points:
+    - "Add the 'open question' label to the feature"
+    - "The label must be set at least 3 days before the Alignment Day"
+    - "Alignment Day clarifies open questions/dependencies; it is not a planning or refinement session"
+  evidence: "This is not a planning or refinement session — it's a dedicated space to clarify uncertainties, discuss dependencies"
+
+- id: D06
+  reviewed: false
+  review_note: "Source kit-master-data-overview.mdx uses slightly different category names."
+  question: "When I register a new KIT, which top-level architecture category does it have to go into, and what are the options?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "documentation/kit-framework.mdx"
+    - "docs/release/trg-10/trg-10-01.mdx"
+    - "documentation/kit-master-data-overview.mdx"
+  reference_answer: "Every KIT must be placed in one of four architecture categories: Dataspace Foundation (network basis for secure, sovereign data exchange, e.g. Connector KIT), Industry Core Foundation (common capabilities, data models and digital twin concepts shared by all use cases, e.g. Industry Core KIT), Cross-Industry Use Cases (business problems spanning industries such as sustainability or quality, e.g. PCF KIT), and Industry-Specific Use Cases (vertical needs such as shop floor operations). In addition to the category, a KIT is also assigned a domain (e.g. Sustainability, Engineering) for thematic grouping."
+  key_points:
+    - "A KIT must belong to one of four categories"
+    - "The categories are Dataspace Foundation, Industry Core Foundation, Cross-Industry Use Cases and Industry-Specific Use Cases"
+    - "A KIT additionally has a domain for functional/thematic classification"
+  evidence: "KITs in Eclipse Tractus-X are organized into four main categories, each serving a specific purpose in the dataspace ecosystem:"
+
+- id: D07
+  reviewed: false
+  question: "Keeping our DEPENDENCIES file current is a pain. Is there some shared automation for that, and who maintains it?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "community/sigs/02_sig_infra.md"
+  reference_answer: "Yes. The DEPENDENCIES file is generated with the Eclipse dash-licenses tool, and SIG Infra, the special interest group for automation topics like CI and release, maintains a run-dash GitHub action that helps keep the DEPENDENCIES file up to date. This supports legal compliance, which every Tractus-X repository has to take care of."
+  key_points:
+    - "SIG Infra maintains a run-dash GitHub action for this"
+    - "The DEPENDENCIES file is generated by Eclipse dash-licenses"
+    - "An up-to-date DEPENDENCIES file is part of legal compliance for every repo"
+  evidence: "SIG infra is maintaining a run-dash GitHub action, that helps to ensure the DEPENDENCIES file stays up-to-date."
+
+- id: D08
+  reviewed: false
+  question: "I need a Sonar project and some secrets set up for our repository. Where do I file that request, and does it need anything special if I'm not a committer?"
+  lang: en
+  category: factual
+  expected_sources:
+    - "docs/oss/issues.md"
+  reference_answer: "Requests for Eclipse infrastructure, such as a Sonar project or repository secrets, go to the Eclipse Foundation Helpdesk issue tracker on GitLab. Start the issue summary with the prefix 'tractus-x:'. If you are not a committer, create the ticket and add a committer who gives a 'thumbs up' to approve it. Code- and development-related issues instead belong in the GitHub issues of the repository."
+  key_points:
+    - "File it in the Eclipse Foundation Helpdesk (GitLab)"
+    - "Start the summary with the 'tractus-x:' prefix"
+    - "Non-committers must add a committer to give a 'thumbs up' approval"
+  evidence: "If you are not a committer, create the ticket and add a committer to request a \"thumbs up\" for approval"
+
+- id: D09
+  reviewed: false
+  question: "I've been contributing for a while and a committer wants to nominate me. How does the path to committer actually work?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs/oss/committer-election-process.md"
+    - "docs/oss/contributor-committer.md"
+  reference_answer: "The nomination is prepared jointly by the contributor and a committer, based on demonstrated past merit; the recommended template should link to at most about 7 good issues/PRs so the evaluation takes no more than 15 minutes. The committer files the election via the Eclipse project page ('Nominate a Committer'), which automatically mails the dev list. The election runs for 1 week, during which project committers vote accept, deny or abstain with a reason. Afterwards the project leads and the PMC decide based on the votes, and if accepted there is paperwork with the Eclipse Foundation."
+  key_points:
+    - "Contributor and committer prepare the nomination together, using the recommended template with few (max ~7) links"
+    - "A committer files the election via 'Nominate a Committer' on the Eclipse project page"
+    - "The election lasts 1 week; committers vote accept/deny/abstain with a reason"
+    - "Project leads and PMC decide based on the votes, followed by Eclipse Foundation paperwork"
+  evidence: "After the committer election has been closed, the project leads and the project management committee (see roles) decide based on the committer votes"
+
+- id: D10
+  reviewed: false
+  question: "Ich möchte bei Eclipse Tractus-X mitmachen. Welche Accounts brauche ich und was muss ich dort einrichten, damit meine Beiträge angenommen werden?"
+  lang: de
+  category: procedural
+  expected_sources:
+    - "docs/getting-started.md"
+    - "docs/dev_faq.md"
+  reference_answer: "You need a GitHub account and an Eclipse Foundation account; without them you only have read-only access. On GitHub, enable two-factor authentication and add the email address you use for your Eclipse account. Create the Eclipse Foundation account with the same email you use on GitHub (e.g. your company email), sign the Eclipse Contributor Agreement (ECA), and add your GitHub ID to your Eclipse profile under Social Media Links. Mismatched emails or a missing ECA are typical causes of a failing ECA check on PRs."
+  key_points:
+    - "GitHub account with two-factor authentication enabled"
+    - "Eclipse Foundation account using the same email address as on GitHub"
+    - "Sign the Eclipse Contributor Agreement (ECA)"
+    - "Add the GitHub ID to the Eclipse profile (Social Media Links)"
+  evidence: "Use the same email address that you use in GitHub for your contributions"
+
+- id: D11
+  reviewed: false
+  question: "We want our feature to be picked up in the next release's planning session. What has to be set on the GitHub issue beforehand?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "docs/oss/release-process.md"
+  reference_answer: "For a feature to be considered at the Open Planning Day, its status must be 'Backlog' and the milestone must not yet be set, since milestones are assigned during the session. Both a contributor and a committer must be assigned, the Topic/Product field must be set, and all sections of the feature template must be filled in without deleting any. The issue should also carry the release preparation label, e.g. Prep-R26.03."
+  key_points:
+    - "Status set to Backlog and milestone NOT set"
+    - "Both a contributor and a committer assigned"
+    - "Topic/Product field set"
+    - "All sections of the feature template filled (none deleted)"
+  evidence: "Assignees: Both Contributor and Committer must be assigned"
+
+- id: D12
+  reviewed: false
+  question: "I have an idea for a new KIT. What steps do I go through to get it proposed and published on the website?"
+  lang: en
+  category: procedural
+  expected_sources:
+    - "documentation/kit-getting-started.mdx"
+    - "docs/release/trg-10/trg-10-02.mdx"
+  reference_answer: "Optionally discuss the idea first with the community (KIT office hours, Matrix, discussions). Then create an issue in the sig-release repository using the 'Propose KIT' template and present it at the Open Planning Day of the target release. Build the KIT in your fork of eclipse-tractusx.github.io and submit a pull request to main that includes the KIT content, its master data entry and a changelog. The committer assigned in the sig-release ticket reviews, approves and merges the PR, creates the KIT release check issue, and the KIT appears in the target release's changelog/release notes."
+  key_points:
+    - "Create a sig-release issue using the 'Propose KIT' template"
+    - "Present the ticket at the Open Planning Day of the target release"
+    - "Submit a PR to eclipse-tractusx.github.io with the KIT, updated master data and changelog"
+    - "The assigned committer reviews/merges and handles the release (release check issue, release notes)"
+  evidence: "Present it in the next Open Planning Day for the target release."
+
+- id: D13
+  reviewed: false
+  question: "Our KIT has been incubating for a while. What does it still need before it can become Graduated, and how do we actually apply for that?"
+  lang: en
+  category: cross-kit
+  expected_sources:
+    - "docs/release/trg-10/trg-10-04.mdx"
+    - "documentation/kit-lifecycle.mdx"
+    - "docs/release/trg-10/trg-10-03.mdx"
+  reference_answer: "The KIT must be in the Incubating 'In Review' sub-state with all mandatory artifacts completed, pass the community review, and complete a successful case study (success story) with expert validation and approval. It must also have at least one code owner listed in CODEOWNERS who is an Eclipse committer, responsible for maintenance and support. Graduation is applied for during a release (lifecycle levels only change via a release); the PR or release ticket reviewer checks the requirements, and after merge the graduation is stated in the release notes and a graduationDate is added to the KIT master data."
+  key_points:
+    - "The KIT must be in the Incubating 'In Review' state with all mandatory artifacts completed"
+    - "A successful case study / expert validation and approval is required"
+    - "At least one CODEOWNERS entry who is an Eclipse committer"
+    - "Apply during a release; the lifecycle level only changes via a release"
+  evidence: "A KIT in order to achieve graduation must a KIT must be at `INCUBATING - REVIEW` state."
+
+- id: D14
+  reviewed: false
+  question: "I'm reviewing a PR from an external contributor: it's about 1,500 lines and the updated DEPENDENCIES file lists a new library as 'restricted' without an issue number. What has to happen before I can merge it?"
+  lang: en
+  category: cross-kit
+  expected_sources:
+    - "docs/oss/code-reviews.md"
+    - "docs/release/trg-7/trg-7-03.md"
+    - "docs/release/trg-7/trg-7-00.md"
+    - "docs/release/trg-7/trg-7-04.md"
+    - "docs/oss/issues.md"
+  reference_answer: "Because the contribution exceeds 1,000 lines, a committer must request an IP review for code contributions from the Eclipse Foundation IP Team (IP issue tracker, 'vet-project' template) and it must be approved before the PR is merged. For the 'restricted' library without an IP issue, a project committer must create the IP review for the third-party library (e.g. via the Dash tool with the review option), open a GitHub issue linking the IP issues and track it. Only committers can create valid IP issues. If any library had status 'rejected', the contribution would have to be rejected."
+  key_points:
+    - "More than 1,000 lines requires an approved IP review for code contributions by the EF IP Team before merging"
+    - "A restricted library without an issue number needs an IP review for third-party content created by a committer (e.g. via the Dash tool)"
+    - "Only committers can create valid IP issues"
+    - "Libraries with status 'rejected' mean the contribution must be rejected"
+  evidence: "If the contribution is larger (e.g. > 1000 loc) you have to request an IP check from the EF"
+
+# ---- part U ----
+- id: U01
+  reviewed: false
+  question: "How much is the annual membership fee for joining the Catena-X association, in euros?"
+  lang: en
+  category: unanswerable
+  review_note: "Docs mention 'reoccurring fees' in the DCM FAQ but no amounts (near-miss test)."
+- id: U02
+  reviewed: false
+  question: "How do I deploy the Tractus-X EDC on Red Hat OpenShift with the OpenShift operator?"
+  lang: en
+  category: unanswerable
+  review_note: "No mention of OpenShift anywhere in the corpus (grep, 2026-10-29)."
+- id: U03
+  reviewed: false
+  question: "How do I configure the connector data plane to stream data through Apache Kafka topics?"
+  lang: en
+  category: unanswerable
+  review_note: "No mention of Kafka anywhere in the corpus (grep, 2026-10-29)."
+- id: U04
+  reviewed: false
+  question: "Which post-quantum cryptography algorithms does the connector use to protect DSP protocol messages?"
+  lang: en
+  category: unanswerable
+  review_note: "No mention of post-quantum cryptography in the corpus (grep, 2026-10-29)."
+- id: U05
+  reviewed: false
+  question: "What request rate limit per client does the Digital Twin Registry enforce?"
+  lang: en
+  category: unanswerable
+  review_note: "No rate-limit figures in the corpus (grep 'rate limit', 2026-10-29)."
+- id: U06
+  reviewed: false
+  question: "Wie binde ich die Digital Twin Registry direkt an SAP S/4HANA an?"
+  lang: de
+  category: unanswerable
+  review_note: "No mention of S/4HANA in the corpus (grep, 2026-10-29)."
