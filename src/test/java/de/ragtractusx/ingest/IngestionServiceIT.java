@@ -7,11 +7,14 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
 import de.ragtractusx.config.EmbeddingConfig.EmbeddingSpace;
@@ -20,12 +23,26 @@ import de.ragtractusx.support.PostgresTestBase;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class IngestionServiceIT extends PostgresTestBase {
 
+    static final Path DOCS_DIR = copyFixtures();
+
+    @DynamicPropertySource
+    static void docs(DynamicPropertyRegistry registry) {
+        registry.add("rag.source.local-path", DOCS_DIR::toString);
+    }
+
     @Autowired
     IngestionService ingestion;
     @Autowired
     JdbcClient jdbc;
     @Autowired
     EmbeddingSpace space;
+
+    @BeforeAll
+    static void cleanDatabase(@Autowired JdbcClient jdbc, @Autowired EmbeddingSpace space) {
+        // Other test classes share the database; start from an empty index.
+        jdbc.sql("TRUNCATE " + space.table()).update();
+        jdbc.sql("DELETE FROM ingested_file").update();
+    }
 
     @Test
     @Order(1)

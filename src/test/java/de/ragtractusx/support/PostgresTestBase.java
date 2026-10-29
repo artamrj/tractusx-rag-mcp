@@ -8,18 +8,14 @@ import java.util.stream.Stream;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Full application context against a real pgvector database, with the in-process embedding model and the fixture
- * docs tree (copied to a temp dir so tests may modify it). No API keys needed.
+ * Full application context against a real pgvector database and the in-process embedding model. No API keys needed.
+ * The container is shared by all test classes (started once by Spring Boot, removed when the JVM exits). Each test
+ * class registers its own copy of the fixture docs via {@code @DynamicPropertySource} and {@link #copyFixtures()}.
  */
-@Testcontainers
 @SpringBootTest(properties = {
         "rag.embedding.provider=local",
         "rag.source.type=local",
@@ -28,19 +24,12 @@ import org.testcontainers.utility.DockerImageName;
 })
 public abstract class PostgresTestBase {
 
-    @Container
     @ServiceConnection
     static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(
             DockerImageName.parse("pgvector/pgvector:0.8.7-pg17").asCompatibleSubstituteFor("postgres"));
 
-    protected static final Path DOCS_DIR = copyFixtures();
-
-    @DynamicPropertySource
-    static void docsDir(DynamicPropertyRegistry registry) {
-        registry.add("rag.source.local-path", DOCS_DIR::toString);
-    }
-
-    private static Path copyFixtures() {
+    /** Copies src/test/resources/fixture-docs to a fresh temp dir. */
+    protected static Path copyFixtures() {
         try {
             Path source = Path.of("src/test/resources/fixture-docs");
             Path target = Files.createTempDirectory("fixture-docs");
