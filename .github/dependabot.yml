@@ -12,6 +12,13 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Stay on the Java 21 LTS runtime; move to the next LTS deliberately, not via Dependabot.
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
+      # The build image's Java version is part of the tag (3.9-eclipse-temurin-21), which Dependabot
+      # would bump to non-LTS releases. Maven itself is kept current through the Maven wrapper.
+      - dependency-name: maven
   - package-ecosystem: github-actions
     directory: /
     schedule:
