@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import de.ragtractusx.ingest.IngestionService;
+import de.ragtractusx.metrics.TokenUsageListener;
 import de.ragtractusx.support.PostgresTestBase;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.SystemMessage;
@@ -57,8 +58,13 @@ class AskIT extends PostgresTestBase {
 
         @Bean
         @Primary
-        ChatModel stubChatModel() {
+        ChatModel stubChatModel(TokenUsageListener tokenListener) {
             return new ChatModel() {
+                @Override
+                public java.util.List<dev.langchain4j.model.chat.listener.ChatModelListener> listeners() {
+                    return java.util.List.of(tokenListener);
+                }
+
                 @Override
                 public ChatResponse doChat(ChatRequest request) {
                     LAST_REQUEST.set(request);
@@ -183,7 +189,8 @@ class AskIT extends PostgresTestBase {
 
         mvc.perform(get("/actuator/prometheus"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("rag_ask_duration_seconds_count")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("rag_ask_duration_seconds_bucket")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("rag_llm_tokens_total")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("rag_retrieval_duration_seconds")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("rag_index_chunks")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("outcome=\"answered\"")));

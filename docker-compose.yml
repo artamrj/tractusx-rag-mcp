@@ -1,3 +1,7 @@
+# Local stack: app + PostgreSQL/pgvector + Prometheus + Grafana.
+#   docker compose up -d --build
+#   docker compose run --rm app --ingest      # first ingestion (needs OPENAI_API_KEY)
+#   open http://localhost:8080/api/v1/kits   http://localhost:3000 (Grafana, admin/admin)
 services:
   postgres:
     image: pgvector/pgvector:0.8.7-pg17
@@ -13,6 +17,46 @@ services:
       test: ["CMD-SHELL", "pg_isready -U rag -d ragtractusx"]
       interval: 5s
       retries: 10
+
+  app:
+    build: .
+    image: rag-tractusx:local
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/ragtractusx
+      DB_USER: rag
+      DB_PASSWORD: rag
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/rag-tractusx.json
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
 
 volumes:
   pgdata:
