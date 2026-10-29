@@ -60,7 +60,7 @@ public class TractusxDocsTools {
                                 "properties", Map.of(
                                         "query", Map.of("type", "string", "description", "What to look for, in natural language or keywords"),
                                         "kit", Map.of("type", "string", "description", "Optional KIT id to restrict the search, e.g. connector-kit (see list_tractusx_kits)"),
-                                        "top_k", Map.of("type", "integer", "minimum", 1, "maximum", 20, "description", "Number of excerpts (default 6)")),
+                                        "top_k", Map.of("type", "integer", "minimum", 1, "maximum", 20, "description", "Number of excerpts (default " + search.defaultTopK() + ")")),
                                 "required", List.of("query"),
                                 "additionalProperties", false),
                         this::searchDocs),
