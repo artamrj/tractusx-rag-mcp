@@ -28,8 +28,10 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/ragtractusx
       DB_USER: rag
       DB_PASSWORD: rag
+      # "local" runs a small in-process embedding model: no OpenAI key needed, lower retrieval quality.
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,7 +56,7 @@ services:
       - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
-      - "3000:3000"
+      - "${GRAFANA_PORT:-3000}:3000"
     depends_on:
       - prometheus
 
