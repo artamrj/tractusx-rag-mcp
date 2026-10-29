@@ -39,6 +39,8 @@ public record RagProperties(Llm llm, Embedding embedding, Source source, Retriev
      *
      * @param type            "github" (Tractus-X website repo) or "local" (a directory, e.g. a local clone)
      * @param ref             branch, tag or commit SHA of the website repo
+     * @param kitsVersion     released KIT docs version to index (e.g. "26.09"), or "latest" (first entry of
+     *                        docs-kits_versions.json); substituted for {kits-version} in includePrefixes
      * @param includePrefixes repo folders that are ingested
      * @param siteUrl         public base URL of the published docs
      */
@@ -47,6 +49,7 @@ public record RagProperties(Llm llm, Embedding embedding, Source source, Retriev
             String owner,
             String repo,
             String ref,
+            String kitsVersion,
             String githubToken,
             String localPath,
             List<String> includePrefixes,

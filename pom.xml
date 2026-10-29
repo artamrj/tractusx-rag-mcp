@@ -22,7 +22,9 @@
         <langchain4j.version>1.23.0</langchain4j.version>
         <langchain4j-beta.version>1.23.0-beta33</langchain4j-beta.version>
         <mcp-sdk.version>2.1.0</mcp-sdk.version>
-        <snakeyaml.version>2.4</snakeyaml.version>
+        <!-- "live" tests call paid APIs, "manual" tests hit GitHub; both are opt-in -->
+        <test.excludedGroups>live,manual</test.excludedGroups>
+        <test.groups></test.groups>
     </properties>
 
     <dependencyManagement>
@@ -147,15 +149,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!-- "live" tests call paid APIs; run them with -Dgroups=live -->
-                    <excludedGroups>live</excludedGroups>
+                    <excludedGroups>${test.excludedGroups}</excludedGroups>
+                    <groups>${test.groups}</groups>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
-                    <excludedGroups>live</excludedGroups>
+                    <excludedGroups>${test.excludedGroups}</excludedGroups>
                 </configuration>
                 <executions>
                     <execution>
@@ -171,20 +173,20 @@
 
     <profiles>
         <profile>
-            <!-- ./mvnw verify -Plive : runs only the tests that call Claude/OpenAI -->
+            <!-- ./mvnw test -Plive : only the tests that call Claude/OpenAI (needs API keys) -->
             <id>live</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludedGroups combine.self="override"/>
-                            <groups>live</groups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
+            <properties>
+                <test.excludedGroups>manual</test.excludedGroups>
+                <test.groups>live</test.groups>
+            </properties>
+        </profile>
+        <profile>
+            <!-- ./mvnw test -Pmanual : tests that download the real docs from GitHub -->
+            <id>manual</id>
+            <properties>
+                <test.excludedGroups>live</test.excludedGroups>
+                <test.groups>manual</test.groups>
+            </properties>
         </profile>
     </profiles>
 </project>

@@ -67,10 +67,11 @@ rag:
     owner: eclipse-tractusx
     repo: eclipse-tractusx.github.io
     ref: ${DOCS_REF:main}
+    kits-version: ${DOCS_KITS_VERSION:latest}
     github-token: ${GITHUB_TOKEN:}
     local-path: ${DOCS_LOCAL_PATH:}
     include-prefixes:
-      - docs-kits/
+      - docs-kits_versioned_docs/version-{kits-version}/
       - docs/
       - community/
       - documentation/
