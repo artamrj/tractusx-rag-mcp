@@ -14,8 +14,31 @@ docker compose run --rm app --ingest
 | Grafana (admin/admin, dashboard preloaded) | <http://localhost:3000> |
 | Prometheus | <http://localhost:9090> |
 
-Ports are configurable with `APP_PORT` and `GRAFANA_PORT`. Without an OpenAI key, `EMBEDDING_PROVIDER=local` uses a
-small in-process embedding model (lower retrieval quality).
+Ports are configurable with `APP_PORT` and `GRAFANA_PORT`.
+
+## Run modes
+
+Claude is only needed to *write* answers. Search, the MCP search tool, ingestion and metrics work without it.
+
+| Mode | Keys in `.env` | What works | Retrieval (Hit@8) |
+|---|---|---|---|
+| **Full** | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | Everything, including `/api/v1/ask` and `ask_tractusx_docs` | 100% |
+| **Search only** | `OPENAI_API_KEY` | `/api/v1/search`, MCP `search_tractusx_docs` and `list_tractusx_kits` | 100% |
+| **Fully offline** | none | Same as search only, with an in-process embedding model (all-MiniLM-L6-v2) | 87% |
+
+Without a Claude key, `/api/v1/ask` returns `503` and `ask_tractusx_docs` returns a tool error. With MCP this still
+works well: the agent calls `search_tractusx_docs` and its own model writes the answer.
+
+**Fully offline:**
+
+```bash
+EMBEDDING_PROVIDER=local docker compose up -d
+EMBEDDING_PROVIDER=local docker compose run --rm app --ingest
+curl -s 'localhost:8080/api/v1/search?q=How+should+I+set+CPU+limits+in+my+Helm+chart&k=3'
+```
+
+Ingest with the same `EMBEDDING_PROVIDER` the app uses: each embedding model has its own index table, so switching
+the provider needs one ingestion run for that model.
 
 ## Kubernetes with Helm
 

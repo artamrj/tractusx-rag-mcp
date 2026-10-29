@@ -78,6 +78,9 @@ curl -s -X POST localhost:8080/api/v1/ask -H 'Content-Type: application/json' \
   -d '{"question":"How do I register a digital twin in the Digital Twin Registry?"}'
 ```
 
+> **No Claude key?** Search and the MCP search tool work without it, and `EMBEDDING_PROVIDER=local` runs with no API
+> keys at all. See [run modes](docs/deployment.md#run-modes).
+
 | Endpoint | |
 |---|---|
 | `POST /api/v1/ask` | Answer with numbered sources, token usage and latency |
