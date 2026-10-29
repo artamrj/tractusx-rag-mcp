@@ -86,6 +86,13 @@ class SearchIT extends PostgresTestBase {
     }
 
     @Test
+    void askWithoutAnthropicKeyIsServiceUnavailable() throws Exception {
+        mvc.perform(post("/api/v1/ask").contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"question\":\"What is a BPNL?\"}"))
+                .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
     void adminEndpointNeedsToken() throws Exception {
         mvc.perform(post("/admin/ingest")).andExpect(status().isUnauthorized());
         mvc.perform(post("/admin/ingest").header("X-Admin-Token", "test-admin-token"))
