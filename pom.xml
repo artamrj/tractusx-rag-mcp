@@ -21,7 +21,7 @@
         <java.version>21</java.version>
         <langchain4j.version>1.23.0</langchain4j.version>
         <langchain4j-beta.version>1.23.0-beta33</langchain4j-beta.version>
-        <mcp-sdk.version>2.1.0</mcp-sdk.version>
+        <mcp-sdk.version>2.2.0</mcp-sdk.version>
         <!-- "live" tests call paid APIs, "manual" tests hit GitHub; both are opt-in -->
         <test.excludedGroups>live,manual</test.excludedGroups>
         <test.groups></test.groups>
